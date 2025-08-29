@@ -6,12 +6,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage; // Pastikan ini ada
 use Illuminate\View\View;
+use Intervention\Image\Drivers\Gd\Driver; // Pastikan ini ada
+use Intervention\Image\ImageManager;
+
+// Pastikan ini ada
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Menampilkan form edit profil.
      */
     public function edit(Request $request): View
     {
@@ -21,48 +26,70 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the user's profile information.
+     * Mengupdate informasi profil user.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        // Ambil data user yang sudah divalidasi
         $validatedData = $request->validated();
         $user          = $request->user();
 
-        // Proses upload foto profil jika ada
+        // Proses upload foto profil jika ada file baru yang dikirim
         if ($request->hasFile('image')) {
-            // Hapus foto lama jika ada
+            // Hapus foto lama dari storage jika ada
             if ($user->image) {
                 Storage::disk('public')->delete($user->image);
             }
 
-            $file     = $request->file('image');
-            $filename = 'avatars/' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $file = $request->file('image');
+            $path = 'avatars'; // Definisikan nama folder
+
+            // === SOLUSI DITAMBAHKAN DI SINI ===
+            // Cek jika direktori/folder 'avatars' belum ada di dalam 'storage/app/public'
+            if (! Storage::disk('public')->exists($path)) {
+                // Jika belum ada, maka buat folder tersebut
+                Storage::disk('public')->makeDirectory($path);
+            }
+            // ===================================
+
+            $filename = $user->username . '_' . time() . '.' . $file->getClientOriginalExtension();
 
             // Kompres dan ubah ukuran gambar menjadi persegi (300x300)
             $manager = new ImageManager(new Driver());
             $image   = $manager->read($file);
-            $image->cover(300, 300); // <-- Crop & resize menjadi 300x300 px
-            $image->toJpeg(80)->save(storage_path('app/public/' . $filename));
+            $image->cover(300, 300); // Crop & resize menjadi 300x300 px
+            $image->toJpeg(80)->save(storage_path('app/public/' . $path . '/' . $filename));
 
             // Simpan path gambar baru ke data yang akan di-update
-            $validatedData['image'] = $filename;
+            $validatedData['image'] = $path . '/' . $filename;
         }
 
         // Jika user mengubah email, reset verifikasi email
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+        if ($request->user()->isDirty('email')) {
+            $request->user()->email_verified_at = null;
         }
 
         // Update data user
-        $user->fill($validatedData);
-        $user->save();
+        $request->user()->fill($validatedData);
+        $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
+    public function destroyImage(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->image) {
+            Storage::disk('public')->delete($user->image);
+            $user->image = null;
+            $user->save();
+        }
+
+        return back()->with('status', 'profile-updated');
+    }
+
     /**
-     * Delete the user's account.
+     * Menghapus akun user.
      */
     public function destroy(Request $request): RedirectResponse
     {

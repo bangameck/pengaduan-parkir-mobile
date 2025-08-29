@@ -9,7 +9,7 @@
 @section('content')
     {{-- Header Halaman --}}
     <x-resident-header />
-    <x-page-header>Laporan #{{ $report->report_code }}</x-page-header>
+    <x-page-header>Buat Laporan Baru</x-page-header>
 
     {{-- Formulir dengan Kontrol Alpine.js untuk AJAX --}}
     <div class="p-4 sm:p-6" x-data="{

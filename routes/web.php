@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminReportController;
+use App\Http\Controllers\Auth\OtpVerificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Field\FieldReportController;
 use App\Http\Controllers\HomeController;
@@ -36,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::delete('/profile/image', [ProfileController::class, 'destroyImage'])->name('profile.image.destroy');
 });
 
 Route::get('/admin-panel', function () {
@@ -79,6 +81,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 
 });
+
+Route::get('/otp/verification/{user:username}', [OtpVerificationController::class, 'show'])->name('otp.verification');
+Route::post('/otp/verify', [OtpVerificationController::class, 'verify'])->name('otp.verify');
 
 // Pastikan tidak ada spasi di sini
 require __DIR__ . '/auth.php';

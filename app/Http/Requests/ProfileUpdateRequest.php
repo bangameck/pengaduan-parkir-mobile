@@ -17,7 +17,11 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'name'         => ['required', 'string', 'max:255'],
             // Tambahkan validasi untuk username, pastikan unik dan abaikan user saat ini
-            'username'     => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique(User::class)->ignore($this->user()->id)],
+            'username'     => [
+                'required', 'string', 'max:255',
+                'regex:/^[a-z0-9_]+$/', // <-- HANYA huruf kecil, angka, dan underscore
+                Rule::unique(User::class)->ignore($this->user()->id),
+            ],
             'email'        => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
                                                                                        // Tambahkan validasi untuk foto profil
             'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'], // Maks 2MB
