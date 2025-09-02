@@ -101,7 +101,7 @@ Route::controller(ForgotPasswordOtpController::class)->group(function () {
     Route::get('reset-password/{user:username}/{token}', 'showResetForm')->name('password.reset');
 
     // Menyimpan password baru
-    Route::post('reset-password', 'resetPassword')->name('password.update');
+    Route::post('reset-password', [ForgotPasswordOtpController::class, 'resetPassword'])->name('password.update.via.otp');
 });
 
 Route::get('/otp/verification/{user:username}', [OtpVerificationController::class, 'show'])->name('otp.verification');

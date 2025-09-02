@@ -20,8 +20,4 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
-    })
-    ->withProviders([
-                                                  // ... provider lain
-        App\Providers\ViewServiceProvider::class, // <-- TAMBAHKAN INI
-    ])->create();
+    })->create();

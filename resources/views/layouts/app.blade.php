@@ -6,98 +6,167 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Laravel') }} - Ruang Kendali</title>
 
-        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+    <body class="font-sans antialiased bg-gray-100">
+        <div x-data="{ sidebarOpen: false }" class="flex h-screen bg-gray-200">
+            <aside
+                class="fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform -translate-x-full bg-dishub-blue-800 lg:translate-x-0 lg:static lg:inset-0"
+                :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }">
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
+                {{-- Logo dan Nama Aplikasi di Sidebar --}}
+                <div class="flex items-center justify-center mt-8">
+                    <div class="flex items-center">
+                        <a href="{{ route('dashboard') }}">
+                            <img src="{{ asset('logo-parkir.png') }}" alt="Logo ParkirPKU" class="w-16 h-16 mx-auto">
+                        </a>
+                    </div>
+                </div>
+                <div class="text-center text-white mt-2">
+                    <h1 class="text-lg font-bold">PENGADUAN PARKIR</h1>
+                    <p class="text-xs text-dishub-yellow-300">UPT Perparkiran Kota Pekanbaru</p>
+                </div>
+
+
+                @include('layouts.navigation')
+
+            </aside>
+
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header
+                    class="flex items-center justify-between px-6 py-4 bg-white border-b-2 border-dishub-yellow-300">
+                    <div class="flex items-center">
+                        <button @click="sidebarOpen = true" class="text-gray-500 focus:outline-none lg:hidden">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </button>
+                        <div class="relative mx-4 lg:mx-0">
+                            <h1 class="text-lg font-semibold text-dishub-blue-800">Ruang Kendali Kantor</h1>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <div x-data="{ dropdownOpen: false }" class="relative mx-4">
+                            {{-- Tombol Lonceng --}}
+                            <button @click="dropdownOpen = !dropdownOpen"
+                                class="relative text-gray-600 focus:outline-none">
+                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M15 17H20L18.5951 15.5951C18.2141 15.2141 18 14.6973 18 14.1585V11C18 8.38757 16.3304 6.16509 14 5.34142V5C14 3.89543 13.1046 3 12 3C10.8954 3 10 3.89543 10 5V5.34142C7.66962 6.16509 6 8.38757 6 11V14.1585C6 14.6973 5.78595 15.2141 5.40493 15.5951L4 17H9M12 21C12.5523 21 13 20.5523 13 20V19H11V20C11 20.5523 11.4477 21 12 21Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                </svg>
+
+                                {{-- Badge Notifikasi --}}
+                                @if (isset($notificationCount) && $notificationCount > 0)
+                                    <span
+                                        class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                                        {{ $notificationCount }}
+                                    </span>
+                                @endif
+                            </button>
+
+                            {{-- Latar belakang gelap saat dropdown terbuka --}}
+                            <div x-show="dropdownOpen" @click="dropdownOpen = false"
+                                class="fixed inset-0 z-10 w-full h-full" style="display: none;"></div>
+
+                            {{-- Panel Dropdown --}}
+                            <div x-show="dropdownOpen" x-transition
+                                class="absolute right-0 z-20 w-80 mt-2 overflow-hidden bg-white rounded-lg shadow-xl"
+                                style="display: none;">
+
+                                <div class="p-4 border-b">
+                                    <h4 class="font-semibold text-gray-800">Notifikasi</h4>
+                                    @if ($notificationCount > 0)
+                                        <p class="text-sm text-gray-600">Anda memiliki {{ $notificationCount }} laporan
+                                            baru.</p>
+                                    @else
+                                        <p class="text-sm text-gray-600">Tidak ada notifikasi baru.</p>
+                                    @endif
+                                </div>
+
+                                {{-- DAFTAR NOTIFIKASI DINAMIS DENGAN @forelse --}}
+                                <div class="max-h-64 overflow-y-auto">
+                                    @forelse ($notifications as $notification)
+                                        <a href="#" {{-- Nantinya bisa ke route('admin.laporan.show', $notification->id) --}}
+                                            class="flex items-center px-4 py-3 text-sm text-gray-600 hover:bg-gray-100 -mx-2 border-b">
+                                            <div class="ml-3">
+                                                <p class="font-semibold text-gray-700">Laporan
+                                                    #{{ $notification->report_code }}
+                                                    perlu ditindaklanjuti.</p>
+                                                <p class="text-xs text-gray-500">
+                                                    {{ $notification->created_at->diffForHumans() }}</p>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-4 py-8 text-center">
+                                            <p class="text-sm text-gray-500">Semua laporan sudah tertangani! 🎉</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+                                {{-- AKHIR DAFTAR DINAMIS --}}
+
+                                {{-- LINK KE ROUTE YANG BENAR --}}
+                                <a href="{{ route('admin.laporan.index') }}"
+                                    class="block w-full px-4 py-3 font-semibold text-center text-sm text-dishub-blue-800 bg-gray-50 hover:bg-gray-100">
+                                    Lihat Semua Laporan
+                                </a>
+                            </div>
+                        </div>
+
+                        <div x-data="{ dropdownOpen: false }" class="relative">
+                            <button @click="dropdownOpen = !dropdownOpen"
+                                class="relative block h-8 w-8 overflow-hidden rounded-full shadow focus:outline-none">
+                                <img class="object-cover w-full h-full"
+                                    src="{{ Auth::user()->image ? Storage::url(Auth::user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=d9ecff&color=0058e1' }}"
+                                    alt="Your avatar">
+                            </button>
+
+                            <div x-show="dropdownOpen" @click="dropdownOpen = false"
+                                class="fixed inset-0 z-10 w-full h-full" style="display: none;"></div>
+
+                            <div x-show="dropdownOpen"
+                                class="absolute right-0 z-10 w-48 mt-2 overflow-hidden bg-white rounded-md shadow-xl"
+                                style="display: none;">
+                                <a href="{{ route('profile.edit') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-dishub-blue-600 hover:text-white">Profile</a>
+
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <a href="{{ route('logout') }}"
+                                        onclick="event.preventDefault(); this.closest('form').submit();"
+                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-dishub-blue-600 hover:text-white">
+                                        {{ __('Log Out') }}
+                                    </a>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </header>
-            @endisset
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
-            {{-- === TAMBAHKAN POP-UP MEDIA PLAYER DI SINI === --}}
-            <div x-data="{ isMediaPlayerOpen: false, mediaUrl: '', mediaType: 'image' }" x-show="isMediaPlayerOpen" x-transition
-                @open-media-viewer.window="
-                mediaUrl = $event.detail.url;
-                mediaType = $event.detail.type;
-                isMediaPlayerOpen = true;
-             "
-                @keydown.escape.window="isMediaPlayerOpen = false"
-                class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
-                style="display: none;">
+                <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+                    <div class="container mx-auto px-6 py-8">
+                        @if (isset($header))
+                            <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                                {{ $header }}
+                            </div>
+                        @endif
 
-                <div class="relative w-full max-w-3xl" @click.away="isMediaPlayerOpen = false">
-                    <button @click="isMediaPlayerOpen = false"
-                        class="absolute -top-10 right-0 text-white hover:text-gray-300 text-4xl font-bold">&times;</button>
-                    <template x-if="isMediaPlayerOpen">
-                        <div class="bg-black">
-                            <template x-if="mediaType === 'video'">
-                                <video :src="mediaUrl" class="w-full h-auto max-h-[80vh]" controls autoplay
-                                    playsinline></video>
-                            </template>
-                            <template x-if="mediaType === 'image'">
-                                <img :src="mediaUrl" class="w-full h-auto max-h-[80vh] object-contain">
-                            </template>
-                        </div>
-                    </template>
-                </div>
+                        {{ $slot }}
+                    </div>
+                </main>
             </div>
         </div>
     </body>
-    @if (session('success') || session('error'))
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3500,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.addEventListener('mouseenter', Swal.stopTimer)
-                        toast.addEventListener('mouseleave', Swal.resumeTimer)
-                    }
-                });
-
-                @if (session('success'))
-                    Toast.fire({
-                        icon: 'success',
-                        title: '{{ session('success') }}'
-                    });
-                @endif
-
-                @if (session('error'))
-                    Toast.fire({
-                        icon: 'error',
-                        title: '{{ session('error') }}'
-                    });
-                @endif
-            });
-        </script>
-    @endif
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
     @stack('scripts')
 
 </html>

@@ -1,8 +1,10 @@
 <?php
 namespace App\Providers;
 
+// NotificationComposer sudah tidak di-import lagi
 use App\Models\Report;
 use App\Observers\ReportObserver;
+// View juga tidak perlu di-import jika hanya untuk composer ini
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Hanya observer yang tersisa di sini
         Report::observe(ReportObserver::class);
     }
 }

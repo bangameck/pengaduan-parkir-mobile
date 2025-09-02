@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ForgotPasswordOtpController;
 use App\Http\Controllers\Auth\OtpVerificationController;

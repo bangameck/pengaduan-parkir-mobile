@@ -18,25 +18,33 @@ class ReportObserver
 
     public function updated(Report $report): void
     {
-        // Cek apakah kolom 'status' benar-benar berubah
+        // Hanya jalankan jika kolom 'status' benar-benar berubah. Ini sudah benar.
         if ($report->wasChanged('status')) {
 
-            // Siapkan catatan berdasarkan status baru
-            $notes = 'Status diubah menjadi ' . $report->status;
-            if ($report->status == 'rejected' && $report->rejection_reason) {
-                $notes .= ' dengan alasan: ' . $report->rejection_reason;
-                $report->statusHistories()->create(['...']);
+                                                                                    // 1. Siapkan dulu pesan 'notes' yang deskriptif berdasarkan status baru.
+            $notes = 'Status diperbarui menjadi ' . ucfirst($report->status) . '.'; // ucfirst() membuat huruf pertama besar
 
-                // === PICU EVENT DI SINI ===
-                event(new ReportStatusUpdated($report));
+            if ($report->status == 'rejected' && ! empty($report->rejection_reason)) {
+                $notes = 'Laporan ditolak dengan alasan: ' . $report->rejection_reason;
+            } elseif ($report->status == 'verified') {
+                $notes = 'Laporan telah diverifikasi dan diteruskan ke petugas lapangan.';
+            } elseif ($report->status == 'in_progress') {
+                $notes = 'Laporan sedang dalam proses tindak lanjut oleh petugas.';
+            } elseif ($report->status == 'completed') {
+                $notes = 'Laporan telah selesai ditindaklanjuti.';
             }
 
-            // Buat catatan baru di tabel riwayat
+            // 2. Buat catatan riwayat di database HANYA SATU KALI dengan data yang sudah disiapkan.
             $report->statusHistories()->create([
-                'user_id' => Auth::id(), // ID dari admin/officer yang mengubah
+                'user_id' => auth()->id(), // ID dari admin/officer yang mengubah
                 'status'  => $report->status,
                 'notes'   => $notes,
             ]);
+
+            // 3. JANGAN panggil event() di sini.
+            //    Biarkan Controller yang bertanggung jawab untuk memicu notifikasi keluar (seperti WhatsApp).
+            //    Ini mencegah logika ganda dan membuat alur lebih jelas.
+            //    event(new ReportStatusUpdated($report)); // <-- BARIS INI KITA HAPUS DARI OBSERVER
         }
     }
 
