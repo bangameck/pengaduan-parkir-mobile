@@ -1,6 +1,6 @@
 <x-guest-layout>
     <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 px-4">
-        {{-- Logo dan Subtitle --}}
+        {{-- Logo --}}
         <div class="mb-6 text-center">
             <a href="/">
                 <img src="{{ asset('logo-parkir.png') }}" alt="Logo ParkirPKU" class="w-24 h-24 mx-auto">
@@ -11,23 +11,26 @@
             x-data="otpForm('{{ route('otp.resend', $user->username) }}')">
 
             <div class="text-center">
-                <h2 class="text-2xl font-bold text-gray-800">Verifikasi Akun Anda</h2>
+                <h2 class="text-2xl font-bold text-gray-800">Verifikasi Kode OTP</h2>
                 <p class="text-sm text-gray-600 mt-2">
                     Kami telah mengirimkan 6 digit kode OTP ke nomor WhatsApp
                     <br><strong>{{ Str::mask($user->phone_number, '*', 4, 4) }}</strong>.
                 </p>
             </div>
 
-            {{-- Notifikasi Sukses Kirim Ulang --}}
             @if (session('success'))
                 <div class="mt-4 p-3 bg-green-100 text-green-700 rounded-md text-sm text-center">
                     {{ session('success') }}
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('otp.verify') }}" class="mt-8" x-ref="otpForm">
+            <form method="POST" action="{{ route('password.otp.confirm') }}" class="mt-8" x-ref="otpForm">
                 @csrf
+
+                {{-- === INI DIA KUNCINYA, BRODY! === --}}
+                {{-- Kita selipkan username di sini agar controller tahu OTP ini milik siapa --}}
                 <input type="hidden" name="username" value="{{ $user->username }}">
+                {{-- =================================== --}}
 
                 {{-- OTP Input Boxes (Versi Compact) --}}
                 <div class="flex justify-center space-x-2" @paste.prevent="handlePaste">
@@ -41,7 +44,7 @@
                 <x-input-error :messages="$errors->get('otp')" class="mt-2 text-center" />
 
                 <div class="mt-6">
-                    <button type="submit" :disabled="isSubmitting"
+                    <button type="submit" :disabled="isSubmitting || otp.join('').length < 6"
                         class="w-full inline-flex items-center justify-center px-4 py-3 bg-blue-600 border border-transparent rounded-md font-semibold text-sm text-white hover:bg-blue-700 disabled:opacity-50 transition">
                         <svg x-show="isSubmitting" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none"
                             viewBox="0 0 24 24">
@@ -73,30 +76,23 @@
             return {
                 otp: Array(6).fill(''),
                 isSubmitting: false,
-                resendCooldown: 60, // Mulai dari 60 detik
+                resendCooldown: 60,
                 init() {
                     this.startCooldown();
-                    // Fokus ke input pertama saat halaman dimuat
                     this.$nextTick(() => document.getElementById('otp-1').focus());
                 },
                 startCooldown() {
                     const timer = setInterval(() => {
-                        if (this.resendCooldown > 0) {
-                            this.resendCooldown--;
-                        } else {
-                            clearInterval(timer);
-                        }
+                        if (this.resendCooldown > 0) this.resendCooldown--;
+                        else clearInterval(timer);
                     }, 1000);
                 },
                 handleInput(index, event) {
                     let value = event.target.value.replace(/[^0-9]/g, '');
                     this.otp[index] = value;
-
                     if (value && index < 5) {
                         this.$nextTick(() => document.getElementById(`otp-${index + 2}`).focus());
                     }
-
-                    // Cek jika semua sudah terisi, lalu submit otomatis
                     if (this.otp.every(char => char !== '')) {
                         this.isSubmitting = true;
                         this.$refs.otpForm.submit();
@@ -116,7 +112,6 @@
                     }
                 },
                 resendOtp() {
-                    // Redirect ke route kirim ulang
                     window.location.href = resendUrl;
                 }
             }

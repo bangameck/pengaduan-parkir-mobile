@@ -28,6 +28,9 @@ class User extends Authenticatable// Mungkin ada 'implements MustVerifyEmail', b
         'phone_number',
         'image', // <-- Tambahkan ini
         'role_id',
+        'otp_code',
+        'otp_expires_at',
+        'remember_token',
     ];
 
     /**

@@ -30,7 +30,7 @@
                         Username
                     </label>
 
-                    <x-input-error :messages="$errors->get('username')" class="mt-2" />
+                    {{-- <x-input-error :messages="$errors->get('username')" class="mt-2" /> --}}
                 </div>
 
                 {{-- Password --}}
@@ -113,23 +113,22 @@
         </div>
     </div>
 
-    @if ($errors->any())
+    @if ($errors->any() || session('success'))
         <script>
-            // Menunggu sampai halaman siap
             document.addEventListener('DOMContentLoaded', function() {
-                // Ambil semua pesan error
-                let errorMessages = @json($errors->all());
-
-                // Gabungkan semua pesan error menjadi satu string dengan baris baru
-                let errorMessageText = errorMessages.join('<br>');
-
-                // Tampilkan menggunakan SweetAlert2
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops! Login Gagal',
-                    html: errorMessageText,
-                    confirmButtonColor: '#3085d6',
-                });
+                @if (session('success'))
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: '{{ session('success') }}',
+                    });
+                @else
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops! Login Gagal',
+                        html: 'Username atau password yang Anda masukkan salah.',
+                    });
+                @endif
             });
         </script>
     @endif
