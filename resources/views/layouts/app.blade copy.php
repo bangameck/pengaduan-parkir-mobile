@@ -15,11 +15,32 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
             integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
         <!-- Scripts -->
+        <style>
+            .preloader-hidden {
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            }
+        </style>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
     <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
+        {{-- AWAL PRELOADER --}}
+        <div id="page-preloader" class="fixed inset-0 z-[100] flex items-center justify-center bg-white">
+            <div class="relative flex items-center justify-center w-24 h-24">
+                <svg class="absolute w-16 h-16 text-dishub-blue-800" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div
+                    class="absolute w-full h-full border-4 border-dishub-yellow-300 border-t-transparent rounded-full animate-spin">
+                </div>
+            </div>
+        </div>
+        {{-- AKHIR PRELOADER --}}
+        <div x-data="{ sidebarOpen: false }" class="min-h-screen bg-gray-100">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
@@ -99,5 +120,18 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     @stack('scripts')
+    <script>
+        // Logika untuk menyembunyikan preloader setelah halaman siap
+        window.addEventListener('load', function() {
+            const preloader = document.getElementById('page-preloader');
+            if (preloader) {
+                preloader.classList.add('preloader-hidden');
+                // Hapus elemen dari DOM setelah animasi selesai
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 500);
+            }
+        });
+    </script>
 
 </html>

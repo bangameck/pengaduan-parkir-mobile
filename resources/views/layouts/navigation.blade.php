@@ -10,7 +10,7 @@
     </x-nav-link-side>
 
     {{-- Menggunakan route 'laporan.index' dan aktif jika route diawali 'laporan.' --}}
-    <x-nav-link-side href="#" :active="request()->routeIs('laporan.*')">
+    <x-nav-link-side href="{{ route('admin.laporan.index') }}" :active="request()->routeIs('admin.laporan.*')">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -30,6 +30,20 @@
                 </path>
             </svg>
             <span class="mx-3">Manajemen Tim</span>
+        </x-nav-link-side>
+    @endcan
+
+    @can('view-super-admin-dashboard')
+        <div class="px-6 py-2 mt-4 text-xs uppercase text-gray-400">
+            Administrasi Sistem
+        </div>
+
+        <x-nav-link-side :href="route('super-admin.users.index')" :active="request()->routeIs('super-admin.users.*')">
+            <span class="mx-3">Manajemen Pengguna</span>
+        </x-nav-link-side>
+
+        <x-nav-link-side href="#"> {{-- Nanti ke route('super-admin.settings.index') --}}
+            <span class="mx-3">Pengaturan Aplikasi</span>
         </x-nav-link-side>
     @endcan
 

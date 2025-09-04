@@ -54,7 +54,7 @@ class ReportController extends Controller
             DB::beginTransaction();
 
             // 2. Buat Laporan Utama Terlebih Dahulu
-            $reportCode = 'PKU-' . date('ymd') . '-' . strtoupper(Str::random(4));
+            $reportCode = 'PKRP-' . date('ymd') . '-' . strtoupper(Str::random(4));
             $report     = Report::create([
                 'report_code'      => $reportCode,
                 'resident_id'      => Auth::id(),
@@ -62,6 +62,8 @@ class ReportController extends Controller
                 'description'      => $validated['description'],
                 'location_address' => $validated['location_address'],
                 'status'           => 'pending',
+                'source'           => 'web',                      // Menandai bahwa laporan ini berasal dari web
+                'source_contact'   => Auth::user()->phone_number, // Ambil no HP user yg login
             ]);
 
             // 3. Proses Setiap File yang Diupload

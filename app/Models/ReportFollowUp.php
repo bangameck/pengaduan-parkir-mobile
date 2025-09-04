@@ -20,4 +20,10 @@ class ReportFollowUp extends Model
     {
         return $this->belongsTo(User::class, 'officer_id');
     }
+
+    public function user(): BelongsTo
+    {
+        // Asumsi di tabel 'report_follow_ups' ada kolom 'user_id'
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

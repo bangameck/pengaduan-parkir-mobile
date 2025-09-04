@@ -45,7 +45,7 @@ class PublicReportList extends Component
             $query->where('status', $this->status);
         } else {
             if (is_null($this->status)) {
-                $query->whereIn('status', ['completed', 'in_progress', 'verified']);
+                $query->whereIn('status', ['completed', 'in_progress', 'verified', 'pending', 'rejected']);
             }
         }
 

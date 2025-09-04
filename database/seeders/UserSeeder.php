@@ -29,6 +29,7 @@ class UserSeeder extends Seeder
         // Buat data users
         User::create([
             'name'         => 'Super Admin User',
+            'username'     => 'superadmin',
             'email'        => 'superadmin@parkir.pku',
             'phone_number' => '6281200000001',
             'password'     => Hash::make('password'),
@@ -37,6 +38,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'name'         => 'Admin Officer User',
+            'username'     => 'adminofficer',
             'email'        => 'adminofficer@parkir.pku',
             'phone_number' => '6281200000002',
             'password'     => Hash::make('password'),
@@ -45,6 +47,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'name'         => 'Field Officer User',
+            'username'     => 'fieldofficer',
             'email'        => 'fieldofficer@parkir.pku',
             'phone_number' => '6281200000003',
             'password'     => Hash::make('password'),
@@ -53,6 +56,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'name'         => 'Resident User',
+            'username'     => 'resident',
             'email'        => 'resident@parkir.pku',
             'phone_number' => '6282288445265', // No HP ini yg akan terima notif WA
             'password'     => Hash::make('password'),
@@ -61,6 +65,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'name'         => 'Leader User',
+            'username'     => 'leader',
             'email'        => 'leader@parkir.pku',
             'phone_number' => '6281200000005',
             'password'     => Hash::make('password'),

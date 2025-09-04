@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Report;
 use App\Observers\ReportObserver;
 // View juga tidak perlu di-import jika hanya untuk composer ini
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,5 +25,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Hanya observer yang tersisa di sini
         Report::observe(ReportObserver::class);
+        Gate::define('view-super-admin-dashboard', function ($user) {
+            return $user->role->name === 'super-admin';
+        });
     }
 }

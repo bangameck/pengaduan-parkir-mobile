@@ -5,40 +5,64 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-
         <title>{{ config('app.name', 'Laravel') }} - Ruang Kendali</title>
-
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        {{-- SweetAlert2 via CDN (jika Anda menggunakan metode ini) --}}
+        <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @livewireStyles
+
     </head>
 
     <body class="font-sans antialiased bg-gray-100">
         <div x-data="{ sidebarOpen: false }" class="flex h-screen bg-gray-200">
+
+            {{-- ====================================================================== --}}
+            {{-- == PERBAIKAN 1: Letakkan Overlay di sini & tambahkan style display none == --}}
+            {{-- ====================================================================== --}}
+            <div x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak
+                class="fixed inset-0 z-20 bg-black bg-opacity-50 transition-opacity lg:hidden" style="display: none;">
+            </div>
+
             <aside
                 class="fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform -translate-x-full bg-dishub-blue-800 lg:translate-x-0 lg:static lg:inset-0"
                 :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }">
 
-                {{-- Logo dan Nama Aplikasi di Sidebar --}}
-                <div class="flex items-center justify-center mt-8">
-                    <div class="flex items-center">
+                {{-- Header Sidebar --}}
+                <div class="flex items-start justify-between mt-8 px-4">
+                    {{-- Logo dan Nama Aplikasi di Sidebar --}}
+                    <div class="flex flex-col items-center flex-1">
                         <a href="{{ route('dashboard') }}">
                             <img src="{{ asset('logo-parkir.png') }}" alt="Logo ParkirPKU" class="w-16 h-16 mx-auto">
                         </a>
+                        <div class="text-center text-white mt-2">
+                            <h1 class="text-lg font-bold">PENGADUAN PARKIR</h1>
+                            <p class="text-xs text-dishub-yellow-300">UPT Perparkiran Kota Pekanbaru</p>
+                        </div>
                     </div>
-                </div>
-                <div class="text-center text-white mt-2">
-                    <h1 class="text-lg font-bold">PENGADUAN PARKIR</h1>
-                    <p class="text-xs text-dishub-yellow-300">UPT Perparkiran Kota Pekanbaru</p>
-                </div>
 
+                    {{-- ========================================================== --}}
+                    {{-- == PERBAIKAN 2: Letakkan Tombol Tutup di dalam header sidebar == --}}
+                    {{-- ========================================================== --}}
+                    <button @click="sidebarOpen = false" class="text-gray-400 hover:text-white lg:hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
 
                 @include('layouts.navigation')
 
             </aside>
 
             <div class="flex-1 flex flex-col overflow-hidden">
+                {{-- Header Utama (tidak diubah) --}}
                 <header
                     class="flex items-center justify-between px-6 py-4 bg-white border-b-2 border-dishub-yellow-300">
                     <div class="flex items-center">
@@ -52,7 +76,6 @@
                             <h1 class="text-lg font-semibold text-dishub-blue-800">Ruang Kendali Kantor</h1>
                         </div>
                     </div>
-
                     <div class="flex items-center">
                         <div x-data="{ dropdownOpen: false }" class="relative mx-4">
                             {{-- Tombol Lonceng --}}
@@ -160,13 +183,13 @@
                                 {{ $header }}
                             </div>
                         @endif
-
                         {{ $slot }}
                     </div>
                 </main>
             </div>
         </div>
     </body>
+    @livewireScripts
     @stack('scripts')
 
 </html>
