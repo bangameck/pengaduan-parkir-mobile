@@ -291,7 +291,7 @@ class AdminReportController extends Controller
                 . $reportUrl . "\n\n"
                 . "Terima kasih atas partisipasi Anda.";
 
-            Http::withHeaders(['Authorization' => config('services.fonnte.token')])
+            Http::withHeaders(['Authorization' => config('fonnte_token')])
                 ->post('https://api.fonnte.com/send', [
                     'target'  => $report->source_contact,
                     'message' => $message,

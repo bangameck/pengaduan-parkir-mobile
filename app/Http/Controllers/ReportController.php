@@ -146,7 +146,7 @@ class ReportController extends Controller
         }
 
         // EAGER LOADING (Diperbarui untuk memuat semua relasi yang kita butuhkan)
-        $report->load('images', 'resident', 'followUp.media', 'statusHistories');
+        $report->load('images', 'resident', 'followUp.media', 'statusHistories.user', 'followUp.officers');
 
         // Menampilkan View (tetap sama)
         return view('resident.laporan.show', [

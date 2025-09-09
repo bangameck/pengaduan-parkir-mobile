@@ -9,10 +9,19 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Field\FieldReportController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Leader\AssignmentController;
+use App\Http\Controllers\Leader\DashboardController as LeaderDashboardController;
+use App\Http\Controllers\Leader\TeamController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SuperAdmin\SettingController;
 use App\Http\Controllers\SuperAdmin\UserController;
+use App\Livewire\AdminOfficer\ReportRecap;
+use App\Livewire\Field\PerformanceReport;
+use App\Livewire\Field\TaskList;
+use App\Livewire\Leader\ReportAssignment;
+use App\Livewire\SuperAdmin\ReportList;
 use App\Livewire\SuperAdmin\UserList;
 use Illuminate\Support\Facades\Route;
 
@@ -92,13 +101,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/tugas-lapangan', [FieldReportController::class, 'index'])->name('tugas.index');
         Route::get('/laporan/create', [AdminReportController::class, 'create'])->name('laporan.create');
         Route::post('/laporan', [AdminReportController::class, 'store'])->name('laporan.store');
+        Route::get('/rekap-laporan', ReportRecap::class)->name('laporan.rekap');
     });
 
     // --- RUTE KHUSUS FIELD OFFICER ---
     Route::middleware('role:field-officer')->prefix('petugas')->name('petugas.')->group(function () {
-        Route::get('/tugas', [FieldReportController::class, 'index'])->name('tugas.index');
+        Route::get('/tugas', TaskList::class)->name('tugas.index');
         Route::get('/tugas/{report}/tindak-lanjut', [FieldReportController::class, 'createFollowUp'])->name('tugas.createFollowUp');
         Route::post('/tugas/{report}/tindak-lanjut', [FieldReportController::class, 'storeFollowUp'])->name('tugas.storeFollowUp');
+        Route::get('/kinerja', PerformanceReport::class)->name('kinerja.index');
     });
 
     // --- RUTE KHUSUS SUPER ADMIN ---
@@ -119,7 +130,20 @@ Route::middleware('auth')->group(function () {
             Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
             Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+            Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+            Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+            Route::get('/reports', ReportList::class)->name('reports.index');
         });
+
+    // --- RUTE KHUSUS LEADER ---
+    Route::middleware('role:leader')->prefix('leader')->name('leader.')->group(function () {
+        Route::get('/dashboard', [LeaderDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/team/{user}', [TeamController::class, 'show'])->name('team.show');
+        Route::get('/manajemen-tim', ReportAssignment::class)->name('team.management');
+        Route::get('/manajemen-tim/{report}/tugaskan', [AssignmentController::class, 'create'])->name('assignment.create');
+        Route::post('/manajemen-tim/{report}/tugaskan', [AssignmentController::class, 'store'])->name('assignment.store');
+
+    });
 });
 
 // Route untuk streaming media (video/gambar)

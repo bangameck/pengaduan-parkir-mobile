@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 // PASTIKAN BARIS INI ADA UNTUK MENGHUBUNGKAN KE MODEL ROLE
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -83,9 +84,9 @@ class User extends Authenticatable// Mungkin ada 'implements MustVerifyEmail', b
     /**
      * Tindak lanjut yang dilakukan oleh user ini (sebagai field officer).
      */
-    public function followUps(): HasMany
+    public function followUps(): BelongsToMany
     {
-        return $this->hasMany(ReportFollowUp::class, 'field_officer_id');
+        return $this->belongsToMany(ReportFollowUp::class, 'follow_up_officer');
     }
 
     protected static function booted(): void

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Field;
 use App\Events\ReportStatusUpdated; // <-- 1. IMPORT EVENT
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Models\User;
 use FFMpeg\Coordinate\TimeCode;
 use FFMpeg\FFMpeg;
 use FFMpeg\Format\Video\X264;
@@ -46,13 +47,24 @@ class FieldReportController extends Controller
     public function createFollowUp(Report $report): View
     {
         $report->load('resident', 'images');
-        return view('field.laporan.follow-up', ['report' => $report]);
+
+        // Ambil semua user yang rolenya 'field-officer' untuk ditampilkan di form
+        $fieldOfficers = User::whereHas('role', function ($query) {
+            $query->where('name', 'field-officer');
+        })->get();
+
+        return view('field.laporan.follow-up', [
+            'report'        => $report,
+            'fieldOfficers' => $fieldOfficers,
+        ]);
     }
 
     public function storeFollowUp(Request $request, Report $report): RedirectResponse
     {
         $validated = $request->validate([
             'notes'         => 'required|string|min:10',
+            'officer_ids'   => 'required|array', // <-- Input baru untuk banyak petugas
+            'officer_ids.*' => 'exists:users,id',
             'proof_media'   => 'required|array|max:5',
             'proof_media.*' => 'file|mimes:jpeg,png,jpg,mp4,mov,avi|max:25600',
             'latitude'      => 'required|numeric',
@@ -62,18 +74,23 @@ class FieldReportController extends Controller
         try {
             DB::beginTransaction();
 
+            // Buat record tindak lanjut dulu (tanpa officer_id)
             $followUp = $report->followUp()->create([
-                'officer_id'      => Auth::id(),
                 'notes'           => $validated['notes'],
                 'proof_latitude'  => $validated['latitude'],
                 'proof_longitude' => $validated['longitude'],
             ]);
+
+            // LAMPIRKAN BANYAK PETUGAS ke tindak lanjut ini
+            $followUp->officers()->attach($validated['officer_ids']);
 
             if ($request->hasFile('proof_media')) {
                 foreach ($request->file('proof_media') as $file) {
                     $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
                     $fileType = str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video';
                     $path     = 'proofs/' . $fileType . 's';
+
+                    $thumbnailPath = null;
 
                     if (! Storage::disk('public')->exists($path)) {
                         Storage::disk('public')->makeDirectory($path);
@@ -131,6 +148,6 @@ class FieldReportController extends Controller
             return back()->with('error', 'Gagal menyimpan: ' . $e->getMessage())->withInput();
         }
 
-        return redirect()->route('admin.tugas.index')->with('success', 'Tindak lanjut untuk laporan ' . $report->report_code . ' berhasil disimpan!');
+        return redirect()->route('petugas.tugas.index')->with('success', 'Tindak lanjut untuk laporan ' . $report->report_code . ' berhasil disimpan!');
     }
 }

@@ -27,7 +27,7 @@ class SendWhatsAppNotification
 
         if ($message && $resident->phone_number) {
             try {
-                Http::withHeaders(['Authorization' => config('services.fonnte.token')])
+                Http::withHeaders(['Authorization' => config('fonnte_token')])
                     ->post('https://api.fonnte.com/send', [
                         'target'  => $resident->phone_number,
                         'message' => $message,

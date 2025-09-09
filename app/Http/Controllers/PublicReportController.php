@@ -38,7 +38,7 @@ class PublicReportController extends Controller
         }
 
         // Load relasi yang dibutuhkan agar query efisien
-        $report->load('images', 'statusHistories.user', 'followUp.user');
+        $report->load('images', 'statusHistories.user', 'followUp.officers');
 
         // Kirim data ke view baru yang akan kita buat
         return view('laporan-publik-show', ['report' => $report]);

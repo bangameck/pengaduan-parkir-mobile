@@ -1,7 +1,8 @@
 <?php
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider; // Pastikan ini di-import
+use App\Models\User;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
@@ -20,21 +21,35 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->registerPolicies();
-
-        // TAMBAHKAN GATE DI SINI
-
-        /**
-         * Gate untuk menentukan siapa yang bisa mengelola tim.
-         * Hanya 'super-admin' dan 'leader' yang bisa.
-         * Asumsi: Model User Anda punya kolom/properti 'role'.
-         */
-        Gate::define('manage-teams', function ($user) {
-            return in_array($user->role, ['super-admin', 'leader']);
+        Gate::define('manage-teams', function (User $user) {
+            // ==========================================================
+            // == PERBAIKAN DI SINI: Gunakan $user->role->name ==
+            // ==========================================================
+            return in_array($user->role->name, ['super-admin', 'leader']);
         });
 
-        // Anda bisa menambahkan Gate lain di sini nanti
-        // Gate::define('view-reports', function ($user) { ... });
+        Gate::define('delete-reports', function (User $user) {
+            return $user->role->name === 'super-admin';
+        });
 
+        Gate::define('view-internal-dashboard', function (User $user) {
+            return in_array($user->role->name, ['super-admin', 'admin-officer', 'field-officer', 'leader']);
+        });
+
+        Gate::define('view-super-admin-menu', function (User $user) {
+            return $user->role->name === 'super-admin';
+        });
+
+        Gate::define('view-admin-officer-menu', function (User $user) {
+            return in_array($user->role->name, ['super-admin', 'admin-officer']);
+        });
+
+        Gate::define('view-field-officer-menu', function (User $user) {
+            return in_array($user->role->name, ['super-admin', 'field-officer']);
+        });
+
+        Gate::define('view-leader-menu', function (User $user) {
+            return in_array($user->role->name, ['super-admin', 'leader']);
+        });
     }
 }

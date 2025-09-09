@@ -99,11 +99,13 @@ class UserController extends Controller
 
                 case 'field-officer':
                     // ==========================================================
-                    // == PERBAIKAN LOGIKA QUERY ADA DI SINI ==
+                    // == PERBAIKAN FINAL ADA DI SINI ==
                     // ==========================================================
-                    $query = Report::whereHas('followUp', function ($q) use ($user) {
-                        // Gunakan 'officer_id' sesuai relasi 'officer()' di model Anda
-                        $q->where('officer_id', $user->id);
+                    // Cari laporan yang punya relasi 'followUp',
+                    // DAN di dalam relasi 'followUp' itu, cari relasi 'officers'
+                    // yang ID-nya cocok dengan ID field officer ini.
+                    $query = Report::whereHas('followUp.officers', function ($q) use ($user) {
+                        $q->where('users.id', $user->id);
                     });
                     break;
             }

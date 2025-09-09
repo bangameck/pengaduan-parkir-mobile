@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>{{ config('app.name', 'ParkirPKU') }} - Pengaduan Parkir Pekanbaru</title>
+        <title>{{ config('app_name', 'Aplikasi Pengaduan Parkir Pekanbaru') }} - Ruang Kendali</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap"
@@ -150,6 +150,32 @@
             </div>
         @endauth
         @guest
+            <div x-data="{ isMediaPlayerOpen: false, mediaUrl: '', mediaType: 'image' }"
+                @open-media-viewer.window="
+            mediaUrl = $event.detail.url;
+            mediaType = $event.detail.type;
+            isMediaPlayerOpen = true;
+         "
+                x-show="isMediaPlayerOpen" x-transition @keydown.escape.window="isMediaPlayerOpen = false"
+                class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+                style="display: none;">
+
+                <div class="relative w-full max-w-3xl" @click.away="isMediaPlayerOpen = false">
+                    <button @click="isMediaPlayerOpen = false"
+                        class="absolute -top-10 right-0 text-white hover:text-gray-300 text-4xl font-bold">&times;</button>
+                    <template x-if="isMediaPlayerOpen">
+                        <div class="bg-black">
+                            <template x-if="mediaType === 'video'">
+                                <video :src="mediaUrl" class="w-full h-auto max-h-[80vh]" controls autoplay
+                                    playsinline></video>
+                            </template>
+                            <template x-if="mediaType === 'image'">
+                                <img :src="mediaUrl" class="w-full h-auto max-h-[80vh] object-contain">
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
             <footer class="bg-white border-t mt-12">
                 <div class="container mx-auto py-6 px-4 text-center text-gray-500 text-sm">
                     &copy; {{ date('Y') }} Aplikasi Pengaduan Perparkiran Kota Pekanbaru.

@@ -46,6 +46,7 @@ import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
 
 // Membuat SweetAlert2 bisa diakses dari script di file Blade
 window.Swal = Swal;
+window.FilePond = FilePond;
 
 // Mendaftarkan semua plugin FilePond yang sudah kita impor
 FilePond.registerPlugin(
