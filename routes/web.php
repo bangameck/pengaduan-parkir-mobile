@@ -21,6 +21,7 @@ use App\Livewire\AdminOfficer\ReportRecap;
 use App\Livewire\Field\PerformanceReport;
 use App\Livewire\Field\TaskList;
 use App\Livewire\Leader\ReportAssignment;
+use App\Livewire\Leader\TeamList;
 use App\Livewire\SuperAdmin\ReportList;
 use App\Livewire\SuperAdmin\UserList;
 use Illuminate\Support\Facades\Route;
@@ -137,11 +138,12 @@ Route::middleware('auth')->group(function () {
 
     // --- RUTE KHUSUS LEADER ---
     Route::middleware('role:leader')->prefix('leader')->name('leader.')->group(function () {
+        Route::get('/manajemen-tim', TeamList::class)->name('team.management');
         Route::get('/dashboard', [LeaderDashboardController::class, 'index'])->name('dashboard');
         Route::get('/team/{user}', [TeamController::class, 'show'])->name('team.show');
-        Route::get('/manajemen-tim', ReportAssignment::class)->name('team.management');
-        Route::get('/manajemen-tim/{report}/tugaskan', [AssignmentController::class, 'create'])->name('assignment.create');
-        Route::post('/manajemen-tim/{report}/tugaskan', [AssignmentController::class, 'store'])->name('assignment.store');
+        Route::get('/penugasan', ReportAssignment::class)->name('team.assignment');
+        Route::get('/penugasan/{report}/tugaskan', [AssignmentController::class, 'create'])->name('assignment.create');
+        Route::post('/penugasan/{report}/tugaskan', [AssignmentController::class, 'store'])->name('assignment.store');
 
     });
 });

@@ -61,7 +61,7 @@
                     <tr>
                         <td>#{{ $report->report_code }}</td>
                         <td>{{ $report->title }}</td>
-                        <td>{{ $report->resident->name }}</td>
+                        <td>{{ $report->reportName }}</td>
                         <td>{{ ucfirst(str_replace('_', ' ', $report->status)) }}</td>
                         <td>{{ $report->created_at->isoFormat('D MMM Y') }}</td>
                     </tr>

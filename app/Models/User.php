@@ -58,6 +58,21 @@ class User extends Authenticatable// Mungkin ada 'implements MustVerifyEmail', b
         ];
     }
 
+    public function getMaskedNameAttribute()
+    {
+        $name   = $this->name;
+        $length = strlen($name);
+
+        if ($length <= 2) {
+            return str_repeat('*', $length);
+        }
+
+        $start  = substr($name, 0, 3);
+        $end    = substr($name, -3);
+        $masked = str_repeat('*', $length - 6);
+
+        return $start . $masked . $end;
+    }
     /**
      * Get the role associated with the user.
      *

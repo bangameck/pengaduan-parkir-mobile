@@ -86,12 +86,22 @@
             <div class="p-4 bg-white rounded-lg shadow-sm border-2 border-green-500 space-y-4">
                 <h2 class="text-lg font-bold text-green-600">✅ Laporan Selesai Ditindaklanjuti</h2>
                 <dl class="space-y-4">
-                    @if ($report->followUp->officer)
-                        <div>
-                            <dt class="text-xs font-medium text-gray-500">Petugas Lapangan</dt>
-                            <dd class="text-sm font-semibold text-gray-800">{{ $report->followUp->officer->name }}</dd>
-                        </div>
-                    @endif
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Ditindaklanjuti oleh Tim Petugas:</dt>
+                        <dd class="mt-2 flex flex-wrap gap-4">
+                            @forelse($report->followUp->officers as $officer)
+                                <div class="flex items-center gap-2">
+                                    <img class="h-8 w-8 rounded-full object-cover"
+                                        src="{{ $officer->image ? Storage::url($officer->image) : 'https://ui-avatars.com/api/?name=' . urlencode($officer->name) . '&background=EBF4FF&color=76A9FA' }}"
+                                        alt="{{ $officer->name }}">
+                                    <span class="text-sm font-semibold text-gray-800">{{ $officer->name }}</span>
+                                </div>
+                            @empty
+                                <span class="text-sm font-semibold text-gray-800">-</span>
+                            @endforelse
+                        </dd>
+                    </div>
+
                     <div>
                         <dt class="text-xs font-medium text-gray-500">Catatan Petugas</dt>
                         <dd class="text-sm text-gray-800 whitespace-pre-wrap">{{ $report->followUp->notes }}</dd>
@@ -137,25 +147,33 @@
         <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
             <h2 class="text-lg font-bold text-gray-800 mb-4">Riwayat Laporan</h2>
             <ol class="relative border-l border-gray-200">
-                @foreach ($report->statusHistories->sortBy('created_at') as $history)
-                    <li class="mb-6 ml-4">
+
+                {{-- ================================================================ --}}
+                {{-- == PERBAIKAN 3: Mengurutkan Riwayat dari yang Terbaru (Desc) == --}}
+                {{-- ================================================================ --}}
+                @foreach ($report->statusHistories->sortByDesc('created_at') as $history)
+                    <li class="mb-8 ml-4">
                         <div class="absolute w-3 h-3 bg-blue-500 rounded-full mt-1.5 -left-1.5 border border-white"></div>
                         <time
                             class="mb-1 text-sm font-normal leading-none text-gray-400">{{ $history->created_at->isoFormat('dddd, D MMMM YYYY - HH:mm') }}</time>
-                        <h3 class="text-md font-semibold text-gray-900">Status:
-                            {{ Str::ucfirst(str_replace('_', ' ', $history->status)) }}</h3>
+                        <h3 class="text-md font-semibold text-gray-900 capitalize">Status:
+                            {{ str_replace('_', ' ', $history->status) }}</h3>
                         <p class="text-sm font-normal text-gray-500">{{ $history->notes }}</p>
+
+                        {{-- ========================================================== --}}
+                        {{-- == PERBAIKAN 2: Menampilkan Nama Pelaku di setiap Riwayat == --}}
+                        {{-- ========================================================== --}}
+                        @if ($history->user)
+                            <p class="text-xs font-medium text-gray-400 mt-1">oleh: {{ $history->user->name }}
+                                ({{ str_replace('-', ' ', $history->user->role->name) }})
+                            </p>
+                        @endif
                     </li>
                 @endforeach
-                {{-- <li class="ml-4">
-                    <div class="absolute w-3 h-3 bg-gray-300 rounded-full mt-1.5 -left-1.5 border border-white"></div>
-                    <time
-                        class="mb-1 text-sm font-normal leading-none text-gray-400">{{ $report->created_at->isoFormat('dddd, D MMMM YYYY - HH:mm') }}</time>
-                    <h3 class="text-md font-semibold text-gray-900">Laporan Dibuat</h3>
-                    <p class="text-sm font-normal text-gray-500">Laporan berhasil dikirim dan menunggu verifikasi.</p>
-                </li> --}}
             </ol>
         </div>
+    </div>
+
     </div>
 @endsection
 

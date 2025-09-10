@@ -9,6 +9,7 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
         './app/Livewire/**/*.php',
+        './ node_modules / flowbite/**/ *.js',
     ],
 
     theme: {
@@ -49,5 +50,5 @@ export default {
         },
     },
 
-    plugins: [forms],
+    plugins: [forms, require('flowbite/plugin')],
 };

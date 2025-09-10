@@ -14,6 +14,21 @@
 
     {{-- Kartu Statistik Laporan Milik User --}}
     <div class="p-4 sm:p-6">
+        <div class="bg-white p-6 rounded-2xl border border-gray-200 flex items-center gap-5 mb-3">
+            <div class="relative flex-shrink-0">
+                {{-- Avatar dengan border gradien biru-kuning --}}
+                <div class="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-dishub-yellow-400 to-dishub-blue-600">
+                    <img class="h-full w-full rounded-full object-cover border-4 border-white"
+                        src="{{ Auth::user()->image ? Storage::url(Auth::user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=EBF4FF&color=1E40AF&size=128&bold=true' }}"
+                        alt="Avatar">
+                </div>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">Selamat Datang, <span
+                        class="text-dishub-blue-800">{{ Auth::user()->name }}</span>!</h3>
+                <p class="text-gray-500">Berikut adalah ringkasan aktivitas laporan Anda.</p>
+            </div>
+        </div>
         <h2 class="text-lg font-semibold text-gray-700 mb-3">Ringkasan Laporan Anda</h2>
         <div class="grid grid-cols-2 gap-4">
             {{-- Total Laporan --}}
@@ -189,8 +204,8 @@
                 </a>
             @empty
                 <div class="p-6 text-center bg-white rounded-lg shadow-sm border border-gray-200">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        aria-hidden="true">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" aria-hidden="true">
                         <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"
                             stroke-width="2"
                             d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />

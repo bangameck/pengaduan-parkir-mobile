@@ -27,6 +27,27 @@ class Report extends Model
         ];
     }
 
+    public function getMaskedSourceContactAttribute()
+    {
+        $value = $this->source_contact;
+
+        if (empty($value)) {
+            return null; // kalau kosong, langsung return null
+        }
+
+        $length = strlen($value);
+
+        if ($length <= 2) {
+            return str_repeat('*', $length);
+        }
+
+        $start  = substr($value, 0, 3);
+        $end    = substr($value, -3);
+        $masked = str_repeat('*', max(0, $length - 6));
+
+        return $start . $masked . $end;
+    }
+
     public function getRouteKeyName(): string
     {
         return 'report_code';

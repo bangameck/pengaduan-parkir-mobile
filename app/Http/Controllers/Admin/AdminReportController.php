@@ -61,8 +61,20 @@ class AdminReportController extends Controller
         // Ambil data laporan
         $reports = $query->with('resident')
             ->latest()
-            ->paginate(10)
+            ->paginate(8)
             ->withQueryString();
+
+        $reports->getCollection()->transform(function ($report) {
+            $socials = ['instagram', 'tiktok', 'facebook'];
+
+            if (in_array(strtolower($report->source), $socials)) {
+                $report->reportName = $report->source_contact . ' via ' . $report->source;
+            } else {
+                $report->reportName = $report->resident?->name . ' via ' . $report->source;
+            }
+
+            return $report;
+        });
 
         // 4. KIRIM SEMUA DATA BARU KE VIEW
         return view('admin.laporan.index', [
@@ -178,16 +190,54 @@ class AdminReportController extends Controller
                         'role_id'  => $residentRoleId,
                     ]
                 );
-            } else {
+            } elseif ($validated['source'] === 'instagram') {
                 // Jika sumbernya BUKAN WA (Medsos, dll), kita selalu buat user "tamu" baru.
-                $resident = User::create([
-                    'name'     => "Pelapor via " . ucfirst($validated['source']),
-                    'username' => Str::slug($validated['source_contact'], '_') . '_' . strtolower(Str::random(4)),
-                    'email'    => 'guest.' . time() . Str::random(5) . '@parkirapp.dev', // Email unik dummy
-                    'password' => bcrypt(Str::random(16)),
-                    'role_id'  => $residentRoleId,
-                    // 'phone_number' di sini sengaja dikosongkan karena sumbernya bukan WA
-                ]);
+                $resident = User::firstOrCreate(
+                    ['username' => 'laporan_via_instagram'],
+                    [
+                        'name'     => "Pelapor via " . ucfirst($validated['source']),
+                        'username' => 'laporan_via_instagram',
+                        'email'    => 'instagram.' . time() . Str::random(5) . '@parkirapp.dev', // Email unik dummy
+                        'password' => bcrypt(Str::random(16)),
+                        'role_id'  => $residentRoleId,
+                        // 'phone_number' di sini sengaja dikosongkan karena sumbernya bukan WA
+                    ]);
+            } elseif ($validated['source'] === 'tiktok') {
+                // Jika sumbernya BUKAN WA (Medsos, dll), kita selalu buat user "tamu" baru.
+                $resident = User::firstOrCreate(
+                    ['username' => 'laporan_via_tiktok'],
+                    [
+                        'name'     => "Pelapor via " . ucfirst($validated['source']),
+                        'username' => 'laporan_via_tiktok',
+                        'email'    => 'tiktok.' . time() . Str::random(5) . '@parkirapp.dev', // Email unik dummy
+                        'password' => bcrypt(Str::random(16)),
+                        'role_id'  => $residentRoleId,
+                        // 'phone_number' di sini sengaja dikosongkan karena sumbernya bukan WA
+                    ]);
+            } elseif ($validated['source'] === 'facebook') {
+                // Jika sumbernya BUKAN WA (Medsos, dll), kita selalu buat user "tamu" baru.
+                $resident = User::firstOrCreate(
+                    ['username' => 'laporan_via_facebook'],
+                    [
+                        'name'     => "Pelapor via " . ucfirst($validated['source']),
+                        'username' => 'laporan_via_facebook',
+                        'email'    => 'facebook.' . time() . Str::random(5) . '@parkirapp.dev', // Email unik dummy
+                        'password' => bcrypt(Str::random(16)),
+                        'role_id'  => $residentRoleId,
+                        // 'phone_number' di sini sengaja dikosongkan karena sumbernya bukan WA
+                    ]);
+            } elseif ($validated['source'] === 'lainnya') {
+                // Jika sumbernya BUKAN WA (Medsos, dll), kita selalu buat user "tamu" baru.
+                $resident = User::firstOrCreate(
+                    ['username' => 'laporan_via_lainnya'],
+                    [
+                        'name'     => "Pelapor via " . ucfirst($validated['source']),
+                        'username' => 'laporan_via_lainnya',
+                        'email'    => 'lainnya.' . time() . Str::random(5) . '@parkirapp.dev', // Email unik dummy
+                        'password' => bcrypt(Str::random(16)),
+                        'role_id'  => $residentRoleId,
+                        // 'phone_number' di sini sengaja dikosongkan karena sumbernya bukan WA
+                    ]);
             }
 
             $report = Report::create([

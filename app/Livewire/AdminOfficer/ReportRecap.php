@@ -27,23 +27,31 @@ class ReportRecap extends Component
         $this->endDate   = $this->endDate ?? now()->endOfMonth()->format('Y-m-d');
     }
 
-    // Fungsi untuk membangun query dasar, agar bisa dipakai ulang
-    private function buildReportQuery()
+    /**
+     * Query dasar (belum dipaginate).
+     */
+    private function getBaseQuery()
     {
         $query = Report::query();
 
         if ($this->filterType === 'this_month') {
-            $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
+            $query->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
         } elseif ($this->filterType === 'this_year') {
             $query->whereYear('created_at', now()->year);
         } elseif ($this->filterType === 'custom' && $this->startDate && $this->endDate) {
-            $query->whereBetween('created_at', [Carbon::parse($this->startDate)->startOfDay(), Carbon::parse($this->endDate)->endOfDay()]);
+            $query->whereBetween(
+                'created_at',
+                [Carbon::parse($this->startDate)->startOfDay(), Carbon::parse($this->endDate)->endOfDay()]
+            );
         }
 
-        return $query;
+        return $query->with('resident');
     }
 
-    // Fungsi untuk mendapatkan label periode
+    /**
+     * Label periode untuk judul laporan.
+     */
     private function getPeriodLabel()
     {
         if ($this->filterType === 'this_month') {
@@ -55,25 +63,31 @@ class ReportRecap extends Component
         }
 
         if ($this->filterType === 'custom') {
-            return Carbon::parse($this->startDate)->isoFormat('D MMM Y') . ' - ' . Carbon::parse($this->endDate)->isoFormat('D MMM Y');
+            return Carbon::parse($this->startDate)->isoFormat('D MMM Y')
+            . ' - ' . Carbon::parse($this->endDate)->isoFormat('D MMM Y');
         }
 
         return 'Semua Waktu';
     }
 
-    // FUNGSI EKSPOR
+    /**
+     * Export ke Excel.
+     */
     public function exportExcel()
     {
-        $reports  = $this->buildReportQuery()->with('resident')->latest()->get();
+        $reports  = $this->getBaseQuery()->latest()->get();
         $period   = $this->getPeriodLabel();
         $fileName = 'Rekap Laporan - ' . $period . '.xlsx';
 
         return Excel::download(new ReportsExport($reports, $period), $fileName);
     }
 
+    /**
+     * Export ke PDF.
+     */
     public function exportPdf()
     {
-        $reports = $this->buildReportQuery()->with('resident')->latest()->get();
+        $reports = $this->getBaseQuery()->latest()->get();
         $period  = $this->getPeriodLabel();
 
         $pdf = Pdf::loadView('admin.laporan.rekap-laporan', [
@@ -87,25 +101,25 @@ class ReportRecap extends Component
 
     public function render()
     {
-        $baseQuery = $this->buildReportQuery();
+        $baseQuery = $this->getBaseQuery();
 
-        // STATISTIK UTAMA
+        // Statistik utama
         $stats = [
-            'total'       => $baseQuery->clone()->count(),
-            'completed'   => $baseQuery->clone()->where('status', 'completed')->count(),
-            'rejected'    => $baseQuery->clone()->where('status', 'rejected')->count(),
-            'in_progress' => $baseQuery->clone()->whereIn('status', ['verified', 'in_progress'])->count(),
-            'pending'     => $baseQuery->clone()->where('status', 'pending')->count(),
+            'total'       => (clone $baseQuery)->count(),
+            'completed'   => (clone $baseQuery)->where('status', 'completed')->count(),
+            'rejected'    => (clone $baseQuery)->where('status', 'rejected')->count(),
+            'in_progress' => (clone $baseQuery)->whereIn('status', ['verified', 'in_progress'])->count(),
+            'pending'     => (clone $baseQuery)->where('status', 'pending')->count(),
         ];
 
-        // DATA UNTUK GRAFIK TREN
-        $trendData = $baseQuery->clone()
+        // Data tren
+        $trendData = (clone $baseQuery)
             ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
 
-        // DATA UNTUK GRAFIK PIE
+        // Data pie chart
         $pieChartData = [
             'labels' => ['Selesai', 'Ditolak', 'Dalam Proses', 'Pending'],
             'values' => [
@@ -116,10 +130,22 @@ class ReportRecap extends Component
             ],
         ];
 
-        // Data untuk tabel detail
-        $reports = $baseQuery->clone()->with('resident')->latest()->paginate(10);
+        // Data tabel (paginate)
+        $reports = (clone $baseQuery)->latest()->paginate(10);
 
-        // Kirim event untuk update chart di frontend
+        $reports->getCollection()->transform(function ($report) {
+            $socials = ['instagram', 'tiktok', 'facebook'];
+
+            if (in_array(strtolower($report->source), $socials)) {
+                $report->reportName = $report->source_contact;
+            } else {
+                $report->reportName = $report->resident?->name;
+            }
+
+            return $report;
+        });
+
+        // Dispatch ke frontend untuk update chart
         $this->dispatch('updateCharts', [
             'trendData'    => [
                 'labels' => $trendData->pluck('date')->map(fn($date) => Carbon::parse($date)->format('d M')),

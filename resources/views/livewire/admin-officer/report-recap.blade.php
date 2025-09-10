@@ -121,7 +121,8 @@
                                                 title="Klik untuk mencari laporan ini di Manajemen Laporan">{{ $report->title }}</a>
                                             <p class="font-mono text-xs text-gray-500">#{{ $report->report_code }}</p>
                                         </td>
-                                        <td class="py-3 px-4 text-sm">{{ $report->resident->name }}</td>
+                                        <td class="py-3 px-4 text-sm"><b>{{ $report->reportName }}</b> via
+                                            {{ ucfirst($report->source) }}</td>
                                         <td class="py-3 px-4 text-sm"><span
                                                 class="px-2 py-1 text-xs font-medium rounded-full capitalize {{ $statusClasses[$report->status] ?? 'bg-gray-100 text-gray-700' }}">{{ str_replace('_', ' ', $report->status) }}</span>
                                         </td>

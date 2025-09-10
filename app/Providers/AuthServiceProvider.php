@@ -25,7 +25,7 @@ class AuthServiceProvider extends ServiceProvider
             // ==========================================================
             // == PERBAIKAN DI SINI: Gunakan $user->role->name ==
             // ==========================================================
-            return in_array($user->role->name, ['super-admin', 'leader']);
+            return in_array($user->role->name, ['leader']);
         });
 
         Gate::define('delete-reports', function (User $user) {
@@ -41,15 +41,15 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('view-admin-officer-menu', function (User $user) {
-            return in_array($user->role->name, ['super-admin', 'admin-officer']);
+            return in_array($user->role->name, ['admin-officer']);
         });
 
         Gate::define('view-field-officer-menu', function (User $user) {
-            return in_array($user->role->name, ['super-admin', 'field-officer']);
+            return in_array($user->role->name, ['field-officer']);
         });
 
         Gate::define('view-leader-menu', function (User $user) {
-            return in_array($user->role->name, ['super-admin', 'leader']);
+            return in_array($user->role->name, ['leader']);
         });
     }
 }

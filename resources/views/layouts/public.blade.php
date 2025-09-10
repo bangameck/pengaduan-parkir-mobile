@@ -182,9 +182,41 @@
                 </div>
             </footer>
         @endguest
+        <script>
+            window.addEventListener('load', function() {
+                const skeleton = document.getElementById('skeleton-loader');
+                const content = document.getElementById('main-content');
+                if (skeleton && content) {
+                    skeleton.classList.add('hidden');
+                    content.classList.remove('hidden');
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', function() {
+                @if (session('success'))
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer)
+                            toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        }
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: '{{ session('success') }}'
+                    });
+                @endif
+            });
+        </script>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
         @livewireScripts
+        @stack('scripts')
     </body>
 
 </html>

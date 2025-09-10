@@ -97,7 +97,7 @@
 
                     {{-- Tabel Laporan --}}
                     <div class="overflow-x-auto border rounded-lg">
-                        <table class="min-w-full bg-white">
+                        <!--<table class="min-w-full bg-white">
                             {{-- ... (thead sama seperti sebelumnya) ... --}}
                             <thead class="bg-slate-50">
                                 <tr>
@@ -115,7 +115,7 @@
                             </thead>
                             <tbody class="text-gray-700">
                                 @forelse ($reports as $report)
-                                    <tr class="hover:bg-slate-50 border-b border-slate-200">
+<tr class="hover:bg-slate-50 border-b border-slate-200">
                                         {{-- ... (td sama seperti sebelumnya) ... --}}
                                         <td class="py-3 px-4 font-mono text-sm text-slate-500">
                                             #{{ $report->report_code }}</td>
@@ -146,7 +146,7 @@
                                             <div class="flex items-center justify-center gap-2">
                                                 {{-- LOGIKA TOMBOL AKSI DINAMIS --}}
                                                 @if ($activeStatus == 'pending')
-                                                    {{-- Tampilkan semua aksi jika di tab "Menunggu Verifikasi" --}}
+{{-- Tampilkan semua aksi jika di tab "Menunggu Verifikasi" --}}
                                                     <a href="{{ route('public.laporan.show', $report) }}"
                                                         class="text-slate-600 hover:text-slate-900"
                                                         title="Lihat Detail">
@@ -164,6 +164,129 @@
                                                     <button type="button"
                                                         class="text-green-600 hover:text-green-900 js-verify-btn"
                                                         title="Verifikasi Laporan" data-report-id="{{ $report->id }}"
+                                                        data-report-code="{{ $report->report_code }}">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button type="button"
+                                                        class="text-red-600 hover:text-red-900 js-reject-btn"
+                                                        title="Tolak Laporan" data-report-id="{{ $report->id }}"
+                                                        data-report-code="{{ $report->report_code }}">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                        </svg>
+                                                    </button>
+@else
+{{-- Hanya tampilkan detail di tab lain --}}
+                                                    <a href="{{ route('public.laporan.show', $report) }}"
+                                                        class="text-slate-600 hover:text-slate-900"
+                                                        title="Lihat Detail">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                                                            </path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                            </path>
+                                                        </svg>
+                                                    </a>
+@endif
+                                                {{-- Form tersembunyi untuk Aksi --}}
+                                                <form id="verify-form-{{ $report->id }}"
+                                                    action="{{ route('admin.laporan.verify', $report) }}"
+                                                    method="POST" class="hidden">@csrf</form>
+                                                <form id="reject-form-{{ $report->id }}"
+                                                    action="{{ route('admin.laporan.reject', $report) }}"
+                                                    method="POST" class="hidden">
+                                                    @csrf
+                                                    <input type="hidden" name="rejection_reason"
+                                                        id="rejection-reason-{{ $report->id }}">
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+@empty
+                                    <tr>
+                                        <td colspan="5" class="text-center py-10 px-4 text-slate-500">
+                                            @if ($search ?? false)
+<p class="font-bold">Laporan dengan kata kunci "{{ $search }}"
+                                                    tidak ditemukan.</p>
+@else
+<p class="font-bold">Tidak ada laporan yang perlu diverifikasi saat
+                                                    ini.</p>
+                                                <p class="text-sm">Kerja bagus! Semua laporan sudah ditangani. 🎉</p>
+@endif
+                                        </td>
+                                    </tr>
+@endforelse
+                            </tbody> -->
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            @forelse ($reports as $report)
+                                <div
+                                    class="bg-white rounded-lg shadow-md border border-gray-200 flex flex-col overflow-hidden group">
+                                    <a href="{{ route('public.laporan.show', $report) }}" class="block relative">
+                                        <img class="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            src="{{ $report->images->first() ? ($report->images->first()->thumbnail_path ? Storage::url($report->images->first()->thumbnail_path) : Storage::url($report->images->first()->file_path)) : 'https://via.placeholder.com/400x300.png/EBF4FF/76A9FA?text=No+Image' }}"
+                                            alt="Dokumentasi Laporan">
+                                        @php
+                                            $statusClasses = [
+                                                'verified' => 'bg-blue-500',
+                                                'in_progress' => 'bg-orange-500',
+                                                'completed' => 'bg-green-500',
+                                                'rejected' => 'bg-red-500',
+                                                'pending' => 'bg-yellow-500',
+                                            ];
+                                        @endphp
+                                        <span
+                                            class="absolute top-2 right-2 text-white text-xs font-semibold px-2.5 py-1 rounded-full {{ $statusClasses[$report->status] ?? 'bg-gray-500' }} capitalize">
+                                            {{ str_replace('_', ' ', $report->status) }}
+                                        </span>
+                                    </a>
+                                    <div class="p-4 flex flex-col flex-grow">
+                                        <p class="text-xs text-gray-500">#{{ $report->report_code }}</p>
+                                        <h4 class="font-bold text-gray-800 leading-tight truncate mt-1">
+                                            {{ $report->title }}</h4>
+                                        <p class="text-sm text-gray-600 mt-1">oleh
+                                            {{ $report->reportName }}
+                                        </p>
+                                        <div class="mt-auto pt-4 flex justify-between items-center">
+                                            <p class="text-xs text-gray-400">
+                                                {{ $report->created_at->diffForHumans() }}</p>
+                                            <div class="flex items-center gap-2">
+                                                <a href="{{ route('super-admin.users.show', $report->resident) }}"
+                                                    title="Lihat Profil Pelapor {{ $report->resident->name }}">
+                                                    <img class="h-6 w-6 rounded-full object-cover transition-transform duration-200 hover:scale-110"
+                                                        src="{{ $report->resident->image ? Storage::url($report->resident->image) : 'https://ui-avatars.com/api/?name=' . urlencode($report->resident->name) . '&background=EBF4FF&color=1E40AF&size=64&bold=true' }}"
+                                                        alt="Avatar {{ $report->resident->name }}">
+                                                </a>
+                                                @if ($activeStatus == 'pending')
+                                                    {{-- Tampilkan semua aksi jika di tab "Menunggu Verifikasi" --}}
+                                                    <a href="{{ route('public.laporan.show', $report) }}"
+                                                        class="text-slate-600 hover:text-slate-900"
+                                                        title="Lihat Detail">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                                                            </path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                            </path>
+                                                        </svg>
+                                                    </a>
+                                                    <button type="button"
+                                                        class="text-green-600 hover:text-green-900 js-verify-btn"
+                                                        title="Verifikasi Laporan"
+                                                        data-report-id="{{ $report->id }}"
                                                         data-report-code="{{ $report->report_code }}">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -210,23 +333,24 @@
                                                         id="rejection-reason-{{ $report->id }}">
                                                 </form>
                                             </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center py-10 px-4 text-slate-500">
-                                            @if ($search ?? false)
-                                                <p class="font-bold">Laporan dengan kata kunci "{{ $search }}"
-                                                    tidak ditemukan.</p>
-                                            @else
-                                                <p class="font-bold">Tidak ada laporan yang perlu diverifikasi saat
-                                                    ini.</p>
-                                                <p class="text-sm">Kerja bagus! Semua laporan sudah ditangani. 🎉</p>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center py-10 px-4 text-slate-500">
+                                        @if ($search ?? false)
+                                            <p class="font-bold">Laporan dengan kata kunci "{{ $search }}"
+                                                tidak ditemukan.</p>
+                                        @else
+                                            <p class="font-bold">Tidak ada laporan yang perlu diverifikasi saat
+                                                ini.</p>
+                                            <p class="text-sm">Kerja bagus! Semua laporan sudah ditangani. 🎉</p>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </div>
                         </table>
                     </div>
 

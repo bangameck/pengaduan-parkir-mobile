@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\ReportFollowUp;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,8 +20,42 @@ class DashboardController extends Controller
         // Router Cerdas: Memilih dashboard berdasarkan role pengguna
         switch ($user->role->name) {
             case 'super-admin':
-                                          // Nanti kita buatkan dashboard khusus untuk Super Admin
-                return view('dashboard'); // Sementara pakai view default
+                // --- Menyiapkan Data Canggih untuk Dashboard Super Admin ---
+
+                // 1. Data Grafik Role Pengguna
+                $userRoleData = User::query()
+                    ->select('role_id', DB::raw('count(*) as count'))
+                    ->with('role:id,name')
+                    ->groupBy('role_id')
+                    ->get();
+
+                $userRoleChart = [
+                    'labels' => $userRoleData->pluck('role.name')->map(fn($role) => ucwords(str_replace('-', ' ', $role))),
+                    'values' => $userRoleData->pluck('count'),
+                ];
+
+                // 2. Data Grafik Status Laporan
+                $reportStatusData = Report::query()
+                    ->select('status', DB::raw('count(*) as count'))
+                    ->groupBy('status')
+                    ->get();
+
+                $reportStatusChart = [
+                    'labels' => $reportStatusData->pluck('status')->map(fn($status) => ucwords(str_replace('_', ' ', $status))),
+                    'values' => $reportStatusData->pluck('count'),
+                ];
+
+                // 3. Aktivitas Terbaru
+                $latestReports = Report::with('resident')->latest()->take(5)->get();
+                $latestUsers   = User::with('role')->latest()->take(5)->get();
+
+                // Tampilkan view khusus Super Admin dengan semua data
+                return view('super-admin.dashboard.index', compact(
+                    'userRoleChart',
+                    'reportStatusChart',
+                    'latestReports',
+                    'latestUsers'
+                ));
 
             case 'admin-officer':
                 // Siapkan data untuk dashboard Admin Officer

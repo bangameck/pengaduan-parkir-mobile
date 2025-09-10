@@ -1,20 +1,31 @@
 @extends('layouts.public')
 
 @section('content')
-    {{-- Bagian Hero --}}
-    <div class="bg-white">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Lapor, Pantau, dan Tertibkan Parkir</h1>
-            <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Bersama wujudkan Pekanbaru yang lebih tertib dan nyaman.
-                Laporkan pelanggaran parkir liar di sekitar Anda dengan mudah.</p>
-            <a href="{{ route('register') }}"
-                class="mt-8 inline-block bg-blue-600 text-white text-lg font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform hover:scale-105">
-                Buat Laporan Sekarang
-            </a>
+    {{-- Bagian Hero dengan Video Latar Belakang --}}
+    <div class="relative bg-dishub-blue-900 text-white overflow-hidden">
+        <video autoplay loop muted playsinline class="absolute z-0 w-auto min-w-full min-h-full max-w-none opacity-20">
+            <source src="{{ asset('aksi-parkir.mp4') }}" type="video/mp4">
+            Browser Anda tidak mendukung tag video.
+        </video>
+        <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
+                <span class="block">Lapor, Pantau, dan Wujudkan</span>
+                <span class="block text-dishub-yellow-400 mt-2">Parkir Tertib di Pekanbaru</span>
+            </h1>
+            <p class="mt-6 text-lg text-blue-200 max-w-2xl mx-auto">
+                Aplikasi ini adalah jembatan antara Anda dan kami. Laporkan pelanggaran parkir, dan biarkan petugas kami
+                yang bertindak.
+            </p>
+            <div class="mt-8 flex justify-center gap-4">
+                <a href="{{ route('login') }}"
+                    class="inline-block bg-dishub-yellow-400 text-dishub-blue-900 text-lg font-bold py-3 px-8 rounded-lg hover:bg-white transition-transform hover:scale-105 shadow-lg">
+                    Buat Laporan
+                </a>
+            </div>
         </div>
     </div>
 
-    {{-- Bagian Statistik dengan Animasi Angka --}}
+    {{-- Bagian Statistik --}}
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Statistik Laporan</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -97,9 +108,85 @@
         </div>
     </div>
 
-    {{-- Bagian Daftar Laporan Selesai --}}
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-        <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Transparansi Kinerja Petugas</h2>
-        <livewire:public-report-list />
+    {{-- Carousel Gambar Tindak Lanjut dengan Flowbite --}}
+    @if ($carouselImages->isNotEmpty())
+        <div class="bg-white py-16">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-800">Galeri Aksi Petugas di Lapangan</h2>
+                    <p class="text-gray-500 mt-2">Dokumentasi nyata dari laporan yang telah selesai ditindaklanjuti.</p>
+                </div>
+
+                {{-- ======================================================= --}}
+                {{-- == AWAL FLOWBITE CAROUSEL == --}}
+                {{-- ======================================================= --}}
+                <div id="gallery" class="relative w-full" data-carousel="slide">
+                    <div class="relative h-56 overflow-hidden rounded-lg sm:h-64 xl:h-80 2xl:h-96">
+                        @foreach ($carouselImages as $image)
+                            <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                                <img src="{{ Storage::url($image->file_path) }}"
+                                    class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
+                                    alt="Foto Tindak Lanjut Petugas">
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="absolute z-30 flex -translate-x-1/2 bottom-5 left-1/2 space-x-3 rtl:space-x-reverse">
+                        @foreach ($carouselImages as $index => $image)
+                            <button type="button" class="w-3 h-3 rounded-full"
+                                aria-current="{{ $loop->first ? 'true' : 'false' }}"
+                                aria-label="Slide {{ $index + 1 }}"
+                                data-carousel-slide-to="{{ $index }}"></button>
+                        @endforeach
+                    </div>
+                    <button type="button"
+                        class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
+                        data-carousel-prev>
+                        <span
+                            class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
+                            <svg class="w-4 h-4 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 6 10">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 1 1 5l4 4" />
+                            </svg>
+                            <span class="sr-only">Previous</span>
+                        </span>
+                    </button>
+                    <button type="button"
+                        class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
+                        data-carousel-next>
+                        <span
+                            class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
+                            <svg class="w-4 h-4 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 6 10">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="m1 9 4-4-4-4" />
+                            </svg>
+                            <span class="sr-only">Next</span>
+                        </span>
+                    </button>
+                </div>
+                {{-- ======================================================= --}}
+                {{-- == AKHIR FLOWBITE CAROUSEL == --}}
+                {{-- ======================================================= --}}
+
+            </div>
+        </div>
+    @endif
+
+    {{-- Bagian Daftar Laporan Publik (Livewire) --}}
+    <div class="bg-gray-50 py-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Transparansi Kinerja Petugas</h2>
+            <livewire:public-report-list />
+        </div>
     </div>
 @endsection
+
+@push('scripts')
+    {{--
+        CATATAN PENTING:
+        Pastikan file JavaScript Flowbite sudah dimuat di layout utama Anda (`layouts/public.blade.php`).
+        Jika belum, Anda bisa menambahkannya via CDN di sana:
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+    --}}
+@endpush
