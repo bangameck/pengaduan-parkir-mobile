@@ -9,6 +9,7 @@ class PublicReportController extends Controller
     public function index(Request $request, $status = null)
     {
         $query = Report::query();
+
         // Hanya tampilkan status yang aman untuk publik
         $allowedStatus = ['completed', 'in_progress', 'verified', 'rejected'];
 
@@ -23,6 +24,8 @@ class PublicReportController extends Controller
             ->latest('updated_at')
             ->paginate(10);
 
+        // 👉 transform() DIHAPUS, gak perlu lagi
+
         return view('laporan-publik', [
             'reports' => $reports,
             'status'  => $status,
@@ -34,13 +37,14 @@ class PublicReportController extends Controller
         // Pastikan kita hanya menampilkan laporan yang statusnya boleh dilihat publik
         $allowedStatus = ['pending', 'verified', 'in_progress', 'completed', 'rejected'];
         if (! in_array($report->status, $allowedStatus)) {
-            abort(404); // Jika statusnya 'pending', jangan tampilkan
+            abort(404);
         }
 
         // Load relasi yang dibutuhkan agar query efisien
-        $report->load('images', 'statusHistories.user', 'followUp.officers');
+        $report->load('images', 'statusHistories.user', 'statusHistories.report', 'followUp.officers');
 
-        // Kirim data ke view baru yang akan kita buat
+        // 👉 Tidak perlu set report_name manual, karena sudah otomatis lewat accessor
+
         return view('laporan-publik-show', ['report' => $report]);
     }
 }

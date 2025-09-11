@@ -45,8 +45,16 @@ export default {
                     '900': '#713f12',
                     '950': '#422006',
                 },
-            }
-            // SAMPAI SINI
+            },
+            keyframes: {
+                gradientMove: {
+                    '0%': { backgroundPosition: '0% 50%' },
+                    '100%': { backgroundPosition: '100% 50%' },
+                },
+            },
+            animation: {
+                gradientMove: 'gradientMove 6s linear infinite',
+            },
         },
     },
 

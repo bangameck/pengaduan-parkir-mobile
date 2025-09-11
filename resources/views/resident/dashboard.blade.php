@@ -146,7 +146,7 @@
         </div>
         <div class="space-y-3">
             @forelse ($reports as $report)
-                <a href="{{ route('laporan.show', $report) }}" class="block">
+                <a href="{{ route('public.laporan.show', $report) }}" class="block">
                     <div
                         class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-shadow duration-200 hover:shadow-md">
                         <div class="flex items-start">

@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 // <-- 1. Tambahkan ini
 
 class ReportStatusHistory extends Model
@@ -18,5 +19,10 @@ class ReportStatusHistory extends Model
     {
         // Asumsi di tabel 'report_status_histories' ada kolom 'user_id'
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function report()
+    {
+        return $this->belongsTo(Report::class, 'report_id');
     }
 }

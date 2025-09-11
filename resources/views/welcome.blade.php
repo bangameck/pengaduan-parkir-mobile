@@ -45,9 +45,9 @@
                 <p class="text-2xl font-bold" x-text="count"></p>
                 <p class="text-sm text-gray-500">Total Laporan</p>
             </a>
-            <a href="{{ route('laporan.publik', 'in_progress') }}"
+            <a href="{{ route('laporan.publik', 'verified') }}"
                 class="block p-4 bg-white rounded-lg shadow text-center hover:bg-gray-50 transition-colors"
-                x-data="{ count: 0 }" x-init="let to = {{ $stats['in_progress'] + $stats['verified'] }};
+                x-data="{ count: 0 }" x-init="let to = {{ $stats['verified'] }};
                 let i = 0;
                 let interval = setInterval(() => {
                     i += Math.ceil(to / 100) || 1;
@@ -183,10 +183,11 @@
 @endsection
 
 @push('scripts')
-    {{--
-        CATATAN PENTING:
-        Pastikan file JavaScript Flowbite sudah dimuat di layout utama Anda (`layouts/public.blade.php`).
-        Jika belum, Anda bisa menambahkannya via CDN di sana:
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
-    --}}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const loadTime = (performance.now() / 1000).toFixed(2);
+            document.getElementById("loadTime").textContent =
+                `⚡ Halaman diload dalam ${loadTime} detik`;
+        });
+    </script>
 @endpush

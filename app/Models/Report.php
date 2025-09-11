@@ -48,6 +48,19 @@ class Report extends Model
         return $start . $masked . $end;
     }
 
+    protected $appends = ['report_name']; // supaya otomatis ikut ke JSON/collection
+
+    public function getReportNameAttribute()
+    {
+        $socials = ['instagram', 'tiktok', 'facebook'];
+
+        if (in_array(strtolower($this->source), $socials)) {
+            return $this->masked_source_contact;
+        }
+
+        return ($this->resident?->_masked_name ?? 'Anonim');
+    }
+
     public function getRouteKeyName(): string
     {
         return 'report_code';

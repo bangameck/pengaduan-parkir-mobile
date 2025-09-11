@@ -38,38 +38,44 @@
             </div>
         </main>
 
-        <nav class="fixed bottom-0 left-0 right-0 w-full bg-white border-t z-40">
-            <div class="flex items-center justify-around max-w-md mx-auto h-16">
+        <nav
+            class="fixed bottom-4 left-1/2 -translate-x-1/2
+           w-[95%] max-w-md bg-blue-600/70 backdrop-blur-md
+           shadow-lg rounded-2xl border border-white/20 z-40">
 
-                {{-- Menu Kiri --}}
-                <div class="flex justify-around w-full">
-                    {{-- Tombol Publik (Homepage) --}}
-                    <a href="{{ route('home') }}"
-                        class="flex flex-col items-center text-center p-2 sm:p-3 transition-colors duration-200 {{ request()->routeIs('home') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600' }}">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h8a2 2 0 002-2v-1a2 2 0 012-2h1.945M7.881 4.109A9 9 0 1112 3a9 9 0 014.119 1.109L12 12 7.881 4.109z">
-                            </path>
-                        </svg>
-                        <span class="text-xs">Publik</span>
-                    </a>
+            <div class="relative flex items-center justify-around h-16 text-white" id="dock-nav">
 
-                    {{-- Tombol Home (Dashboard Resident) --}}
-                    <a href="{{ route('dashboard') }}"
-                        class="flex flex-col items-center text-center p-2 sm:p-3 transition-colors duration-200 {{ request()->routeIs('dashboard') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600' }}">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
-                            </path>
-                        </svg>
-                        <span class="text-xs">Home</span>
-                    </a>
-                </div>
+                {{-- Menu Publik --}}
+                <a href="{{ route('home') }}" data-menu="home"
+                    class="nav-item flex flex-col items-center text-center p-2 sm:p-3 transition-all duration-200
+           {{ request()->routeIs('home') ? 'text-yellow-300' : 'hover:text-yellow-200' }}">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h8a2 2 0 002-2v-1a2 2 0 012-2h1.945M7.881 4.109A9 9 0 1112 3a9 9 0 014.119 1.109L12 12 7.881 4.109z">
+                        </path>
+                    </svg>
+                    <span class="text-xs">Publik</span>
+                </a>
 
-                {{-- Tombol Aksi Utama (Buat Laporan) --}}
+                {{-- Menu Dashboard --}}
+                <a href="{{ route('dashboard') }}" data-menu="dashboard"
+                    class="nav-item flex flex-col items-center text-center p-2 sm:p-3 transition-all duration-200
+           {{ request()->routeIs('dashboard') ? 'text-yellow-300' : 'hover:text-yellow-200' }}">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                        </path>
+                    </svg>
+                    <span class="text-xs">Home</span>
+                </a>
+
+                {{-- Tombol Aksi Utama --}}
                 <div class="relative">
                     <a href="{{ route('laporan.create') }}"
-                        class="relative -mt-8 flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full shadow-lg border-4 border-white hover:bg-blue-700 transition-transform hover:scale-110">
+                        class="relative -mt-10 flex items-center justify-center w-16 h-16
+                       bg-yellow-400 text-blue-900 rounded-full shadow-lg
+                       border-4 border-white/30 hover:bg-yellow-500
+                       transition-transform hover:scale-110">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -77,29 +83,33 @@
                     </a>
                 </div>
 
-                {{-- Menu Kanan --}}
-                <div class="flex justify-around w-full">
-                    {{-- Tombol Laporan Saya --}}
-                    <a href="{{ route('laporan.saya') }}"
-                        class="flex flex-col items-center text-center p-2 sm:p-3 transition-colors duration-200 {{ request()->routeIs('laporan.*') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600' }}">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                            </path>
-                        </svg>
-                        <span class="text-xs">Laporan</span>
-                    </a>
+                {{-- Menu Laporan --}}
+                <a href="{{ route('laporan.saya') }}" data-menu="laporan"
+                    class="nav-item flex flex-col items-center text-center p-2 sm:p-3 transition-all duration-200
+           {{ request()->routeIs('laporan.*') ? 'text-yellow-300' : 'hover:text-yellow-200' }}">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    <span class="text-xs">Laporan</span>
+                </a>
 
-                    <button type="button"
-                        class="js-logout-btn w-full flex flex-col items-center text-center text-gray-500 hover:text-red-600 p-2 sm:p-3">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
-                            </path>
-                        </svg>
-                        <span class="text-xs">Logout</span>
-                    </button>
-                </div>
+                {{-- Logout --}}
+                <button type="button" data-menu="logout"
+                    class="nav-item js-logout-btn flex flex-col items-center text-center
+                   text-gray-200 hover:text-red-400 p-2 sm:p-3 transition-all duration-200">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                    <span class="text-xs">Logout</span>
+                </button>
+
+                {{-- Sliding Indicator --}}
+                <span id="nav-indicator"
+                    class="absolute bottom-1 w-6 h-1 rounded-full bg-yellow-300 transition-all duration-300"></span>
             </div>
         </nav>
 
@@ -144,6 +154,27 @@
                     skeleton.classList.add('hidden');
                     content.classList.remove('hidden');
                 }
+            });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const indicator = document.getElementById("nav-indicator");
+                const items = document.querySelectorAll(".nav-item");
+
+                function moveIndicator(el) {
+                    const rect = el.getBoundingClientRect();
+                    const parentRect = el.parentElement.getBoundingClientRect();
+                    indicator.style.left = (rect.left - parentRect.left + rect.width / 2 - indicator.offsetWidth / 2) +
+                        "px";
+                }
+
+                // Set posisi awal sesuai route aktif
+                const active = document.querySelector(".nav-item.text-yellow-300");
+                if (active) moveIndicator(active);
+
+                // Update saat klik
+                items.forEach(item => {
+                    item.addEventListener("click", () => moveIndicator(item));
+                });
             });
 
             document.addEventListener('DOMContentLoaded', function() {

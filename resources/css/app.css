@@ -11,3 +11,15 @@
 .animate-shake {
   animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
 }
+
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+    z-index: 0 !important;
+}
+
+/* Modal Flowbite tetap di atas */
+[data-modal] {
+    z-index: 9999 !important;
+}

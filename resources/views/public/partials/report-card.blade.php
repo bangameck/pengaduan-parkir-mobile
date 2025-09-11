@@ -3,65 +3,68 @@
     Deskripsi: Kartu laporan dinamis yang bisa menampilkan berbagai status.
 --}}
 @php
-    // PERUBAHAN 1: Siapkan data dinamis untuk status badge
-    $statusClasses = [
-        'verified' => 'bg-blue-100 text-blue-800',
-        'in_progress' => 'bg-orange-100 text-orange-800',
-        'completed' => 'bg-green-100 text-green-800',
-        'rejected' => 'bg-red-100 text-red-800',
-    ];
     $statusText = str_replace('_', ' ', $report->status); // Mengubah 'in_progress' menjadi 'in progress'
 @endphp
 
-<a href="{{ route('public.laporan.show', $report) }}"
-    class="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all duration-300 hover:shadow-lg hover:border-blue-400 hover:-translate-y-1">
-    <div class="flex flex-col sm:flex-row items-start">
-        @php
-            // PERUBAHAN 2: Ambil gambar dari dokumentasi AWAL, bukan dari tindak lanjut
-            $media = $report->images->first();
-        @endphp
-
-        @if ($media)
-            {{-- Tampilan media (gambar atau video thumbnail) --}}
-            <div
-                class="w-full sm:w-32 h-32 bg-gray-100 rounded-md mb-4 sm:mb-0 sm:mr-4 flex items-center justify-center text-gray-400 flex-shrink-0 overflow-hidden">
-                <img src="{{ $media->file_type == 'video' ? Storage::url($media->thumbnail_path) : Storage::url($media->file_path) }}"
-                    alt="Dokumentasi Laporan" class="w-full h-full object-cover">
-            </div>
-        @else
-            {{-- Tampilan fallback jika tidak ada media bukti --}}
-            <div
-                class="w-full sm:w-32 h-32 bg-gray-100 rounded-md mb-4 sm:mb-0 sm:mr-4 flex items-center justify-center text-gray-400 flex-shrink-0">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"></path>
-                </svg>
-            </div>
-        @endif
-
-        <div class="flex-1">
-            <div class="flex justify-between items-start">
-                <h3 class="font-semibold text-gray-800 break-words pr-2">{{ Str::limit($report->title, 50) }}</h3>
-
-                {{-- PERUBAHAN 3: Status badge & teks menjadi dinamis --}}
-                <span
-                    class="text-xs font-medium px-2.5 py-0.5 rounded-full {{ $statusClasses[$report->status] ?? 'bg-gray-100 text-gray-800' }} ml-2 flex-shrink-0 capitalize">
-                    {{ $statusText }}
-                </span>
-            </div>
-            <p class="text-sm text-gray-500 mt-1">
-                <span class="font-semibold">Lokasi:</span>
-                {{ Str::limit($report->location_address, 40) }}
+<a href="{{ route('public.laporan.show', $report) }}">
+    <div class="bg-white rounded-lg shadow-md border border-gray-200 flex flex-col overflow-hidden group">
+        <a href="{{ route('public.laporan.show', $report) }}" class="block relative">
+            <img class="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                src="{{ $report->images->first() ? ($report->images->first()->thumbnail_path ? Storage::url($report->images->first()->thumbnail_path) : Storage::url($report->images->first()->file_path)) : 'https://via.placeholder.com/400x300.png/EBF4FF/76A9FA?text=No+Image' }}"
+                alt="Dokumentasi Laporan">
+            @php
+                $statusClasses = [
+                    'verified' => 'bg-blue-500',
+                    'in_progress' => 'bg-orange-500',
+                    'completed' => 'bg-green-500',
+                    'rejected' => 'bg-red-500',
+                    'pending' => 'bg-yellow-500',
+                ];
+            @endphp
+            <span
+                class="absolute top-2 right-2 text-white text-xs font-semibold px-2.5 py-1 rounded-full {{ $statusClasses[$report->status] ?? 'bg-gray-500' }} capitalize">
+                {{ str_replace('_', ' ', $report->status) }}
+            </span>
+        </a>
+        <div class="p-4 flex flex-col flex-grow">
+            <p class="text-xs text-gray-500">#{{ $report->report_code }}</p>
+            <h4 class="font-bold text-gray-800 leading-tight truncate mt-1">
+                {{ $report->title }}</h4>
+            <p class="text-sm text-gray-600 mt-1">oleh
+                {{ $report->reportName }} via {{ ucfirst($report->source) }}
             </p>
+            <div class="mt-auto pt-4 flex justify-between items-center">
+                <p class="text-xs text-gray-400">
+                    {{ $report->created_at->diffForHumans() }}</p>
+                <div class="flex items-center gap-2">
+                    <a href="#" title="Profil Pelapor Resident">
+                        <img class="h-6 w-6 rounded-full object-cover transition-transform duration-200 hover:scale-110"
+                            src="{{ $report->resident->image ? Storage::url($report->resident->image) : 'https://ui-avatars.com/api/?name=' . urlencode($report->resident->name) . '&background=EBF4FF&color=1E40AF&size=64&bold=true' }}"
+                            alt="Avatar Resident">
+                    </a>
 
-            {{-- PERUBAHAN 4: Label tanggal dan nilainya menjadi dinamis --}}
-            <p class="text-xs text-gray-400 mt-2">
-                @if ($report->status == 'completed' && $report->completed_at)
-                    Selesai pada: {{ \Carbon\Carbon::parse($report->completed_at)->isoFormat('D MMM YYYY, HH:mm') }}
-                @else
-                    Diperbarui: {{ $report->updated_at->diffForHumans() }}
-                @endif
-            </p>
+                    {{-- Hanya tampilkan detail di tab lain --}}
+                    <a href="{{ route('public.laporan.show', $report) }}" class="text-slate-600 hover:text-slate-900"
+                        title="Lihat Detail">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                            </path>
+                        </svg>
+                    </a>
+                    {{-- Form tersembunyi untuk Aksi --}}
+                    <form id="verify-form-{{ $report->id }}" action="{{ route('admin.laporan.verify', $report) }}"
+                        method="POST" class="hidden">@csrf</form>
+                    <form id="reject-form-{{ $report->id }}" action="{{ route('admin.laporan.reject', $report) }}"
+                        method="POST" class="hidden">
+                        @csrf
+                        <input type="hidden" name="rejection_reason" id="rejection-reason-{{ $report->id }}">
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </a>

@@ -2,7 +2,7 @@
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
     {{-- Bagian Media (Gambar/Thumbnail Video) --}}
     @php $firstMedia = $report->images->first(); @endphp
-    <a href="{{ route('laporan.show', $report) }}" class="block">
+    <a href="{{ route('public.laporan.show', $report) }}" class="block">
         @if ($firstMedia)
             <div class="relative w-full aspect-video bg-gray-100 rounded-t-lg">
                 @if ($firstMedia->file_type == 'video' && $firstMedia->thumbnail_path)
@@ -33,7 +33,7 @@
     {{-- Bagian Detail Teks --}}
     <div class="p-4 flex-grow">
         <p class="text-xs text-gray-500">{{ $report->report_code }}</p>
-        <a href="{{ route('laporan.show', $report) }}" class="block">
+        <a href="{{ route('public.laporan.show', $report) }}" class="block">
             <h3 class="font-bold text-gray-800 hover:text-blue-600 leading-tight mt-1">{{ $report->title }}</h3>
         </a>
         <p class="text-xs text-gray-500 mt-2">Dibuat {{ $report->created_at->diffForHumans() }}</p>

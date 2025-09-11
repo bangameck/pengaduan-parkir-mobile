@@ -26,9 +26,14 @@ class SettingController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'app_name'     => 'required|string|max:255',
-            'fonnte_token' => 'nullable|string|max:255',
-            'app_logo'     => 'nullable|image|mimes:png,jpg,jpeg|max:1024', // Logo maks 1MB
+            'app_name'          => 'required|string|max:255',
+            'fonnte_token'      => 'nullable|string|max:255',
+            'app_logo'          => 'nullable|image|mimes:png,jpg,jpeg|max:1024', // Logo maks 1MB
+            'popup_title'       => 'nullable|string|max:255',
+            'popup_text'        => 'nullable|string',
+            'popup_button_text' => 'nullable|string|max:255',
+            'popup_button_url'  => 'nullable|url|max:255',
+            'popup_image'       => 'nullable|image|mimes:png,jpg,jpeg|max:1024',
         ]);
 
         // Loop melalui data yang divalidasi dan simpan ke database
@@ -53,6 +58,29 @@ class SettingController extends Controller
                 ['key' => 'app_logo'],
                 ['value' => $path]
             );
+        }
+
+        // Simpan semua input teks
+        $textInputs = $request->except(['_token', 'app_logo', 'popup_image', 'popup_enabled']);
+        foreach ($textInputs as $key => $value) {
+            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+        }
+
+        // Handle status aktif/nonaktif pop-up
+        $isEnabled = $request->has('popup_enabled') ? '1' : '0';
+        Setting::updateOrCreate(['key' => 'popup_enabled'], ['value' => $isEnabled]);
+
+        // Proses upload file (logo & banner)
+        $filesToUpload = ['app_logo', 'popup_image'];
+        foreach ($filesToUpload as $key) {
+            if ($request->hasFile($key)) {
+                $oldPath = Setting::where('key', $key)->first()->value ?? null;
+                if ($oldPath) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+                $path = $request->file($key)->store('settings', 'public');
+                Setting::updateOrCreate(['key' => $key], ['value' => $path]);
+            }
         }
 
         Cache::forget('settings');

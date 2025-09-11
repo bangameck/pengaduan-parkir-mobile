@@ -12,6 +12,16 @@
 
     {{-- Skeleton untuk Kartu Statistik --}}
     <div class="p-4 sm:p-6">
+        <div class="bg-white p-6 rounded-2xl border border-gray-200 flex items-center gap-5 mb-3">
+            <div class="relative flex-shrink-0">
+                {{-- Avatar dengan border gradien biru-kuning --}}
+                <div class="w-20 h-20 rounded-full bg-gray-200"></div>
+            </div>
+            <div>
+                <div class="h-12 bg-gray-200 rounded w-1/3 mb-3"></div>
+                <div class="h-6 bg-gray-200 rounded w-1/3 mb-3"></div>
+            </div>
+        </div>
         <div class="h-6 bg-gray-200 rounded w-1/3 mb-3"></div>
         <div class="grid grid-cols-2 gap-4">
             <div class="h-20 bg-white rounded-lg shadow-sm border border-gray-200"></div>
@@ -45,16 +55,7 @@
                     </div>
                 </div>
             </div>
-
-            <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-                <div class="flex items-start">
-                    <div class="w-16 h-16 bg-gray-200 rounded-md mr-4"></div>
-                    <div class="flex-1 space-y-3">
-                        <div class="h-4 bg-gray-200 rounded w-full"></div>
-                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
+</div>
 </div>

@@ -62,6 +62,11 @@
             </div>
             <dl class="space-y-3">
                 <div>
+                    <dt class="text-xs font-medium text-gray-500">Pelapor</dt>
+                    <dd class="text-sm font-medium text-gray-800"><b>{{ $report->report_name }}</b> via
+                        {{ ucfirst($report->source) }}</dd>
+                </div>
+                <div>
                     <dt class="text-xs font-medium text-gray-500">Judul Laporan</dt>
                     <dd class="text-sm font-semibold text-gray-800">{{ $report->title }}</dd>
                 </div>
@@ -164,9 +169,20 @@
                         {{-- == PERBAIKAN 2: Menampilkan Nama Pelaku di setiap Riwayat == --}}
                         {{-- ========================================================== --}}
                         @if ($history->user)
-                            <p class="text-xs font-medium text-gray-400 mt-1">oleh: {{ $history->user->name }}
-                                ({{ str_replace('-', ' ', $history->user->role->name) }})
-                            </p>
+                            @if ($history->status === 'pending')
+                                <p class="text-xs font-medium text-gray-400 mt-1">oleh: {{ $history->report->reportName }}
+                                    via {{ ucfirst($report->source) }}
+                                    ({{ str_replace('-', ' ', $history->user->role->name) }})
+                                </p>
+                            @elseif ($history->status === 'completed')
+                                <p class="text-xs font-medium text-gray-400 mt-1">oleh: {{ $history->user->name }}, dkk
+                                    ({{ str_replace('-', ' ', $history->user->role->name) }})
+                                </p>
+                            @else
+                                <p class="text-xs font-medium text-gray-400 mt-1">oleh: {{ $history->user->name }}
+                                    ({{ str_replace('-', ' ', $history->user->role->name) }})
+                                </p>
+                            @endif
                         @endif
                     </li>
                 @endforeach
