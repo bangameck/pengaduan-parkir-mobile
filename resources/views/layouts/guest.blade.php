@@ -106,6 +106,16 @@
                 justify-content: center;
                 margin-right: 1rem;
                 box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                /* Tambahkan padding jika logo terlalu mepet */
+                padding: 5px;
+                /* Sesuaikan nilai ini jika perlu */
+            }
+
+            .app-logo-icon img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                /* Memastikan gambar pas di dalam tanpa terpotong */
             }
 
             .app-logo-text {
@@ -326,7 +336,8 @@
             <div class="auth-left">
                 <div class="app-logo">
                     <div class="app-logo-icon">
-                        <i class="fas fa-parking text-2xl" style="color: #0058e1;"></i>
+                        {{-- Mengganti icon Font Awesome dengan gambar logo --}}
+                        <img src="{{ asset('logo-parkir.png') }}" alt="Logo SiParkirKita">
                     </div>
                     <div class="app-logo-text">SiParkirKita</div>
                 </div>

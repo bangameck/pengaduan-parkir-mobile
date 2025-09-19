@@ -19,6 +19,7 @@
                 font-family: 'Work Sans', sans-serif;
             }
         </style>
+        @PwaHead
     </head>
 
     <body class="bg-gray-50">
@@ -496,7 +497,9 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
         @livewireScripts
+        @RegisterServiceWorkerScript
         @stack('scripts')
+
     </body>
 
 </html>

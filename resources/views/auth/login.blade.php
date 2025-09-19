@@ -101,12 +101,6 @@
                 </button>
             </div>
         </form>
-
-        <div class="auth-footer">
-            <p>Belum mempunyai akun?
-                <a href="{{ route('register') }}" class="auth-link">Daftar disini</a>
-            </p>
-        </div>
     </div>
 
     @if ($errors->any() || session('success'))
