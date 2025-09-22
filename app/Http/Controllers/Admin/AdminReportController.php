@@ -9,6 +9,7 @@ use App\Models\User;
 use FFMpeg\Coordinate\TimeCode;
 use FFMpeg\FFMpeg;
 use FFMpeg\Format\Video\X264;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -135,19 +136,25 @@ class AdminReportController extends Controller
      * Menyimpan laporan baru dari form yang diinput admin.
      * (Logikanya akan kita buat nanti, sekarang siapkan saja dulu)
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse// Ubah return type ke JsonResponse
     {
-        // dd($request->all());
-        // 1. KITA DEFINISIKAN ATURAN VALIDASI
+        // ## PERUBAHAN 1: Terima path dari FilePond ##
+        $images = json_decode($request->input('images'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['error' => 'Format data gambar tidak valid.'], 422);
+        }
+        $request->merge(['images' => is_array($images) ? $images : []]);
+
+        // ## PERUBAHAN 2: Sesuaikan aturan validasi ##
         $validationRules = [
-            'source'           => 'required', 'string', Rule::in(['whatsapp', 'facebook', 'tiktok', 'instagram', 'lainnya']),
-            'resident_name'    => 'required_if:source,whatsapp', 'nullable', 'string', 'max:255',
-            'source_contact'   => 'required', 'string', 'max:255',
-            'title'            => 'required', 'string', 'max:255',
-            'description'      => 'required', 'string', 'min:10', // <-- SAYA LONGGARKAN JADI 10 KARAKTER
-            'location_address' => 'required', 'string', 'max:255',
-            'images'           => 'required|array|max:5',                          // 'images' sekarang adalah array
-            'images.*'         => 'file|mimes:jpeg,png,jpg,mp4,mov,avi|max:25600', // Validasi setiap file
+            'source'           => ['required', 'string', Rule::in(['whatsapp', 'facebook', 'tiktok', 'instagram', 'lainnya'])],
+            'resident_name'    => ['required_if:source,whatsapp', 'nullable', 'string', 'max:255'],
+            'source_contact'   => ['required', 'string', 'max:255'],
+            'title'            => ['required', 'string', 'max:255'],
+            'description'      => ['required', 'string', 'min:10'],
+            'location_address' => ['required', 'string', 'max:255'],
+            'images'           => 'required|array|max:5',
+            'images.*'         => 'string', // Validasi sebagai string path, bukan file
         ];
 
         // 2. KITA BUAT PESAN ERROR KUSTOM DALAM BAHASA INDONESIA
@@ -170,9 +177,6 @@ class AdminReportController extends Controller
         // 3. JALANKAN VALIDASI DENGAN ATURAN DAN PESAN KUSTOM
         $validated = $request->validate($validationRules, $validationMessages);
 
-        // =================================================================
-        // SISA LOGIKA DI BAWAH INI SAMA PERSIS SEPERTI SEBELUMNYA, TIDAK PERLU DIUBAH
-        // =================================================================
         DB::beginTransaction();
         try {
             $resident       = null;
@@ -252,58 +256,8 @@ class AdminReportController extends Controller
                 'source_contact'   => $validated['source_contact'],
             ]);
 
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    $filename      = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-                    $fileType      = str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video';
-                    $path          = 'reports/' . $fileType . 's';
-                    $thumbnailPath = null; // Inisialisasi thumbnail path
-
-                    if (! Storage::disk('public')->exists($path)) {
-                        Storage::disk('public')->makeDirectory($path);
-                    }
-
-                    if ($fileType === 'image') {
-                        // Proses GAMBAR
-                        $manager = new ImageManager(new Driver());
-                        $image   = $manager->read($file);
-                        $image->scale(width: 800)->toJpeg(75)->save(storage_path('app/public/' . $path . '/' . $filename));
-                    } else {
-                        // Proses VIDEO
-                        try {
-                            $ffmpeg = FFMpeg::create([
-                                'ffmpeg.binaries'  => env('FFMPEG_PATH', 'ffmpeg'),
-                                'ffprobe.binaries' => env('FFPROBE_PATH', 'ffprobe'),
-                            ]); // Konfigurasi FFMpeg-mu
-
-                            // === MEMBUAT THUMBNAIL DARI VIDEO ===
-                            $video         = $ffmpeg->open($file->getPathname());
-                            $thumbnailName = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
-                            $thumbnailDir  = 'reports/thumbnails';
-                            if (! Storage::disk('public')->exists($thumbnailDir)) {
-                                Storage::disk('public')->makeDirectory($thumbnailDir);
-                            }
-                            $video->frame(TimeCode::fromSeconds(1))->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
-                            $thumbnailPath = $thumbnailDir . '/' . $thumbnailName; // Simpan path thumbnail
-                                                                                   // ===================================
-
-                            // Kompres Video
-                            $format = new X264('aac', 'libx264');
-                            $format->setKiloBitrate(500);
-                            $video->save($format, storage_path('app/public/' . $path . '/' . $filename));
-                        } catch (\Exception $e) {
-                            Log::warning('FFMpeg Gagal, menyimpan file video asli: ' . $e->getMessage());
-                            $file->storeAs($path, $filename, 'public');
-                        }
-                    }
-
-                    // Simpan path dan tipe file ke DB
-                    $report->images()->create([
-                        'file_path'      => $path . '/' . $filename,
-                        'file_type'      => $fileType,
-                        'thumbnail_path' => $thumbnailPath, // <-- Simpan path thumbnail
-                    ]);
-                }
+            if (! empty($validated['images'])) {
+                $this->processFiles($validated['images'], $report);
             }
 
             DB::commit();
@@ -312,12 +266,73 @@ class AdminReportController extends Controller
                 $this->sendWhatsAppConfirmation($report);
             }
 
-            return redirect()->route('admin.laporan.index')->with('success', "Laporan #{$report->report_code} berhasil dibuat.");
+            return response()->json([
+                'message' => "Laporan #{$report->report_code} berhasil dibuat.",
+                'redirect_url' => route('admin.laporan.index'),
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Gagal membuat laporan oleh admin: " . $e->getMessage() . ' di baris ' . $e->getLine());
-            return back()->with('error', 'Terjadi kesalahan internal saat menyimpan laporan. Error: ' . $e->getMessage())->withInput();
+            // ## PERUBAHAN 5: Kembalikan response error JSON ##
+            return response()->json(['message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function processFiles(array $tempPaths, Report $report): void
+    {
+        $permanentDir = 'reports/' . $report->id;
+        $thumbnailDir = $permanentDir . '/thumbnails';
+        Storage::disk('public')->makeDirectory($thumbnailDir);
+
+        foreach ($tempPaths as $tempPath) {
+            if (! Storage::disk('public')->exists($tempPath)) {
+                continue;
+            }
+
+            $absoluteTempPath = Storage::disk('public')->path($tempPath);
+            $fileType         = Str::startsWith(Storage::disk('public')->mimeType($tempPath), 'video') ? 'video' : 'image';
+            $filename         = basename($tempPath);
+            $newFullPath      = $permanentDir . '/' . $filename;
+            $thumbnailPath    = null;
+
+            if ($fileType === 'image') {
+                $manager = new ImageManager(new Driver());
+                $image   = $manager->read($absoluteTempPath);
+                $image->scale(width: 800)->toJpeg(75)->save(storage_path('app/public/' . $newFullPath));
+                $thumbnailName = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
+                $image->cover(300, 200)->toJpeg(80)->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
+                $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
+            } else {
+                try {
+                    $ffmpeg = FFMpeg::create([
+                        'ffmpeg.binaries'  => env('FFMPEG_PATH', 'ffmpeg'),
+                        'ffprobe.binaries' => env('FFPROBE_PATH', 'ffprobe'),
+                    ]);
+                    $video         = $ffmpeg->open($absoluteTempPath);
+                    $thumbnailName = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
+                    $video->frame(TimeCode::fromSeconds(1))->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
+                    $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
+                    $format        = new X264('aac', 'libx264');
+                    $format->setKiloBitrate(500);
+                    $video->save($format, storage_path('app/public/' . $newFullPath));
+                } catch (\Exception $e) {
+                    Log::error('FFMpeg Gagal: ' . $e->getMessage() . ' untuk file ' . $tempPath);
+                    Storage::disk('public')->move($tempPath, $newFullPath);
+                }
+            }
+
+            if (Storage::disk('public')->exists($tempPath)) {
+                Storage::disk('public')->delete($tempPath);
+            }
+            if (empty(Storage::disk('public')->files(dirname($tempPath)))) {
+                Storage::disk('public')->deleteDirectory(dirname($tempPath));
+            }
+            $report->images()->create([
+                'file_path'      => $newFullPath,
+                'file_type'      => $fileType,
+                'thumbnail_path' => $thumbnailPath,
+            ]);
         }
     }
 

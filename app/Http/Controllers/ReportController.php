@@ -1,13 +1,12 @@
 <?php
 namespace App\Http\Controllers;
 
-// Models and Events
 use App\Events\ReportStatusUpdated;
 use App\Models\Report;
-use App\Models\ReportImage; // Pastikan model ini di-import
-// Laravel Facades & Helpers
+use FFMpeg\Coordinate\TimeCode;
+use FFMpeg\FFMpeg;
+use FFMpeg\Format\Video\X264;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -16,198 +15,99 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
-// Intervention Image
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
 class ReportController extends Controller
 {
-    /**
-     * Menampilkan form untuk membuat laporan baru.
-     */
     public function create(): View
     {
         return view('resident.laporan.create');
     }
 
-    /**
-     * Menyimpan laporan baru ke database.
-     */
     public function store(Request $request): JsonResponse
     {
+        $images = json_decode($request->input('images'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['error' => 'Format data gambar tidak valid.'], 422);
+        }
+        $request->merge(['images' => is_array($images) ? $images : []]);
 
-        // PERBAIKAN: Parse images jika JSON string (dari JS FormData)
-        $images = $request->input('images');
-        if (is_string($images)) {
-            $decodedImages = json_decode($images, true); // Parse ke array
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decodedImages)) {
-                $request->merge(['images' => $decodedImages]); // Ganti request dengan array
-                Log::info('Images parsed from JSON string:', $decodedImages);
-            } else {
-                Log::error('Invalid JSON for images: ' . $images);
-                return response()->json(['error' => 'Format images tidak valid'], 422);
-            }
-        }
-        // PERBAIKAN: Parse video_thumbnails jika ada (array base64)
-        $videoThumbnails = [];
-        foreach ($request->all() as $key => $value) {
-            if (strpos($key, 'video_thumbnails') === 0 && ! empty($value)) {
-                $videoThumbnails[] = $value; // Collect base64 thumbnails
-            }
-        }
-        if (! empty($videoThumbnails)) {
-            $request->merge(['video_thumbnails' => $videoThumbnails]);
-            Log::info('Video thumbnails collected:', count($videoThumbnails));
-        }
-        // PERBAIKAN UTAMA: Validasi diubah untuk menerima array of strings (path)
-        // Validasi
         $validated = $request->validate([
-            'title'              => 'required|string|max:255',
-            'description'        => 'required|string',
-            'location_address'   => 'required|string|max:500',
-            'images'             => 'required|array|min:1|max:5',
-            'images.*'           => 'string',
-            'video_thumbnails'   => 'sometimes|array',
-            'video_thumbnails.*' => 'nullable|string',
-        ], [
-            'images.required' => 'Anda harus mengunggah minimal satu file bukti.',
-            'images.min'      => 'Anda harus mengunggah minimal satu file bukti.',
-            'images.max'      => 'Anda hanya dapat mengunggah maksimal 5 file.',
-        ]);
-
-        // Debug data yang diterima (opsional, bisa dihapus setelah testing)
-        Log::info('Received data:', $validated);
+            'title'            => 'required|string|max:255',
+            'description'      => 'required|string',
+            'location_address' => 'required|string|max:500',
+            'images'           => 'required|array|min:1|max:5',
+            'images.*'         => 'string',
+        ], ['images.required' => 'Anda harus mengunggah minimal satu file bukti.']);
 
         try {
             DB::beginTransaction();
-
-            $reportCode = 'PKRP-' . date('ymd') . '-' . strtoupper(Str::random(4));
-            $report     = Report::create([
-                'report_code'      => $reportCode,
+            $report = Report::create([
+                'report_code'      => 'PKRP-' . date('ymd') . '-' . strtoupper(Str::random(4)),
                 'resident_id'      => Auth::id(),
                 'title'            => $validated['title'],
                 'description'      => $validated['description'],
                 'location_address' => $validated['location_address'],
-                'status'           => 'pending',
-                'source'           => 'web',
+                'status'           => 'pending', 'source' => 'web',
                 'source_contact'   => Auth::user()->phone_number,
             ]);
 
-            foreach ($validated['images'] as $index => $tempPath) {
-                if (! Storage::disk('public')->exists($tempPath)) {
-                    continue;
-                }
-
-                $fileType     = Str::startsWith(Storage::disk('public')->mimeType($tempPath), 'video') ? 'video' : 'image';
-                $filename     = basename($tempPath);
-                $permanentDir = 'reports/' . $report->id;
-                $newFullPath  = $permanentDir . '/' . $filename;
-
-                Storage::disk('public')->move($tempPath, $newFullPath);
-
-                $thumbnailPath = null;
-                $thumbnailDir  = $permanentDir . '/thumbnails';
-
-                if ($fileType === 'image') {
-                    $manager       = new ImageManager(new Driver());
-                    $thumbnailName = 'thumb_' . Str::random(10) . '.jpg';
-                    Storage::disk('public')->makeDirectory($thumbnailDir);
-                    $image = $manager->read(Storage::disk('public')->path($newFullPath));
-                    $image->cover(300, 200)->toJpeg(80)->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
-                    $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
-                } elseif ($fileType === 'video' && ! empty($validated['video_thumbnails'][$index])) {
-                    $base64_image       = $validated['video_thumbnails'][$index];
-                    @list(, $file_data) = explode(',', $base64_image);
-                    $thumbnailData      = base64_decode($file_data);
-
-                    $thumbnailName = 'thumb_' . Str::random(10) . '.jpg';
-                    Storage::disk('public')->makeDirectory($thumbnailDir);
-                    Storage::disk('public')->put($thumbnailDir . '/' . $thumbnailName, $thumbnailData);
-                    $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
-                }
-
-                $report->images()->create([
-                    'file_path'      => $newFullPath,
-                    'file_type'      => $fileType,
-                    'thumbnail_path' => $thumbnailPath,
-                ]);
-
-                Storage::disk('public')->deleteDirectory(dirname($tempPath));
+            // Menggunakan logika yang sama dengan update()
+            if (! empty($validated['images'])) {
+                $this->processFiles($validated['images'], $report);
             }
 
             DB::commit();
             event(new ReportStatusUpdated($report->fresh()));
-
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Gagal menyimpan laporan baru: ' . $e->getMessage());
-            return response()->json(['message' => 'Gagal membuat laporan: ' . $e->getMessage()], 500);
+            Log::error('Gagal menyimpan laporan baru: ' . $e->getMessage() . ' di baris ' . $e->getLine());
+            return response()->json(['message' => 'Gagal membuat laporan: Terjadi kesalahan di server.'], 500);
         }
-
         return response()->json([
-            'message'      => 'Laporan Anda berhasil dikirim! Kode Laporan: ' . $reportCode,
+            'message'      => 'Laporan Anda berhasil dikirim! Kode Laporan: ' . $report->report_code,
             'redirect_url' => route('dashboard'),
         ]);
     }
 
-    /**
-     * Menampilkan detail laporan.
-     */
-    public function show(Request $request, Report $report): View
+    public function show(Report $report): View
     {
-        // Otorisasi (tetap sama)
         if (Auth::id() !== $report->resident_id && ! in_array(Auth::user()->role->name, ['super-admin', 'admin-officer', 'field-officer'])) {
             abort(403, 'ANDA TIDAK BERHAK MENGAKSES LAPORAN INI.');
         }
-
-        if ($request->has('from_update')) {
-            session()->flash('success', 'Laporan berhasil diperbarui!');
-        }
-
-        // EAGER LOADING (Diperbarui untuk memuat semua relasi yang kita butuhkan)
         $report->load('images', 'resident', 'followUp.media', 'statusHistories.user', 'followUp.officers');
-
-        // Menampilkan View (tetap sama)
-        return view('resident.laporan.show', [
-            'report' => $report,
-        ]);
+        return view('resident.laporan.show', ['report' => $report]);
     }
 
-    /**
-     * Menampilkan form edit laporan.
-     */
     public function edit(Report $report): View
     {
-        // OTORISASI: Pastikan hanya pemilik laporan & statusnya 'pending' yang bisa mengedit.
         if (Auth::id() !== $report->resident_id || $report->status !== 'pending') {
             abort(403, 'LAPORAN INI TIDAK DAPAT DIUBAH LAGI.');
         }
-
-        // Muat relasi gambar untuk ditampilkan di form
         $report->load('images');
-
         return view('resident.laporan.edit', ['report' => $report]);
     }
 
-    /**
-     * Memperbarui data laporan di database.
-     */
-    public function update(Request $request, Report $report): RedirectResponse
+    public function update(Request $request, Report $report): JsonResponse
     {
         if (Auth::id() !== $report->resident_id || $report->status !== 'pending') {
-            abort(403, 'LAPORAN INI TIDAK DAPAT DIUBAH LAGI.');
+            return response()->json(['message' => 'Laporan ini tidak dapat diubah lagi.'], 403);
+        }
+
+        $newImages = json_decode($request->input('images', '[]'), true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($newImages)) {
+            $request->merge(['images' => $newImages]);
         }
 
         $validated = $request->validate([
-            'title'              => 'required|string|max:255',
-            'description'        => 'required|string',
-            'location_address'   => 'required|string|max:500',
-            'images'             => 'nullable|array|max:5', // File baru tidak wajib
-            'images.*'           => 'string',               // Kunci: validasi sebagai string
-            'video_thumbnails'   => 'sometimes|array',
-            'video_thumbnails.*' => 'nullable|string',
-            'delete_images'      => 'nullable|array',
-            'delete_images.*'    => 'integer|exists:report_images,id',
+            'title'            => 'required|string|max:255',
+            'description'      => 'required|string',
+            'location_address' => 'required|string|max:500',
+            'images'           => 'nullable|array',
+            'images.*'         => 'string',
+            'delete_images'    => 'nullable|array',
+            'delete_images.*'  => 'integer|exists:report_images,id',
         ]);
 
         try {
@@ -226,49 +126,77 @@ class ReportController extends Controller
             }
 
             if (! empty($validated['images'])) {
-                foreach ($validated['images'] as $index => $tempPath) {
-                    if (! Storage::disk('public')->exists($tempPath)) {
-                        continue;
-                    }
-
-                    $fileType     = Str::startsWith(Storage::disk('public')->mimeType($tempPath), 'video') ? 'video' : 'image';
-                    $filename     = basename($tempPath);
-                    $permanentDir = 'reports/' . $report->id;
-                    $newFullPath  = $permanentDir . '/' . $filename;
-                    Storage::disk('public')->move($tempPath, $newFullPath);
-
-                    $thumbnailPath = null;
-                    $thumbnailDir  = $permanentDir . '/thumbnails';
-
-                    if ($fileType === 'image') {
-                        $manager       = new ImageManager(new Driver());
-                        $thumbnailName = 'thumb_' . Str::random(10) . '.jpg';
-                        Storage::disk('public')->makeDirectory($thumbnailDir);
-                        $image = $manager->read(Storage::disk('public')->path($newFullPath));
-                        $image->cover(300, 200)->toJpeg(80)->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
-                        $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
-                    } elseif ($fileType === 'video' && ! empty($validated['video_thumbnails'][$index])) {
-                        // ... logika untuk menyimpan thumbnail video ...
-                    }
-
-                    $report->images()->create([
-                        'file_path'      => $newFullPath,
-                        'file_type'      => $fileType,
-                        'thumbnail_path' => $thumbnailPath,
-                    ]);
-
-                    Storage::disk('public')->deleteDirectory(dirname($tempPath));
-                }
+                $this->processFiles($validated['images'], $report);
             }
 
             DB::commit();
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal mengupdate laporan: ' . $e->getMessage());
-            return back()->with('error', 'Gagal memperbarui laporan: ' . $e->getMessage())->withInput();
+            return response()->json(['message' => 'Gagal memperbarui laporan: ' . $e->getMessage()], 500);
         }
 
-        return redirect()->route('laporan.show', $report)->with('success', 'Laporan berhasil diperbarui!');
+        return response()->json([
+            'message'      => 'Laporan berhasil diperbarui!',
+            'redirect_url' => route('laporan.show', $report) . '?from_update=1',
+        ]);
+    }
+
+    // Dibuat private function agar tidak duplikasi kode antara store dan update
+    private function processFiles(array $tempPaths, Report $report): void
+    {
+        $permanentDir = 'reports/' . $report->id;
+        $thumbnailDir = $permanentDir . '/thumbnails';
+        Storage::disk('public')->makeDirectory($thumbnailDir);
+
+        foreach ($tempPaths as $tempPath) {
+            if (! Storage::disk('public')->exists($tempPath)) {
+                continue;
+            }
+
+            $absoluteTempPath = Storage::disk('public')->path($tempPath);
+            $fileType         = Str::startsWith(Storage::disk('public')->mimeType($tempPath), 'video') ? 'video' : 'image';
+            $filename         = basename($tempPath);
+            $newFullPath      = $permanentDir . '/' . $filename;
+            $thumbnailPath    = null;
+
+            if ($fileType === 'image') {
+                $manager = new ImageManager(new Driver());
+                $image   = $manager->read($absoluteTempPath);
+                $image->scale(width: 800)->toJpeg(75)->save(storage_path('app/public/' . $newFullPath));
+                $thumbnailName = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
+                $image->cover(300, 200)->toJpeg(80)->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
+                $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
+            } else { // Proses VIDEO
+                try {
+                    $ffmpeg = FFMpeg::create([
+                        'ffmpeg.binaries'  => env('FFMPEG_PATH', 'ffmpeg'),
+                        'ffprobe.binaries' => env('FFPROBE_PATH', 'ffprobe'),
+                    ]);
+                    $video         = $ffmpeg->open($absoluteTempPath);
+                    $thumbnailName = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
+                    $video->frame(TimeCode::fromSeconds(1))->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
+                    $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
+                    $format        = new X264('aac', 'libx264');
+                    $format->setKiloBitrate(500);
+                    $video->save($format, storage_path('app/public/' . $newFullPath));
+                } catch (\Exception $e) {
+                    Log::error('FFMpeg Gagal: ' . $e->getMessage() . ' untuk file ' . $tempPath);
+                    Storage::disk('public')->move($tempPath, $newFullPath);
+                }
+            }
+
+            if (Storage::disk('public')->exists($tempPath)) {
+                Storage::disk('public')->delete($tempPath);
+            }
+            if (empty(Storage::disk('public')->files(dirname($tempPath)))) {
+                Storage::disk('public')->deleteDirectory(dirname($tempPath));
+            }
+            $report->images()->create([
+                'file_path'      => $newFullPath,
+                'file_type'      => $fileType,
+                'thumbnail_path' => $thumbnailPath,
+            ]);
+        }
     }
 }

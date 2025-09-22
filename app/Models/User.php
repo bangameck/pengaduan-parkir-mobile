@@ -63,10 +63,20 @@ class User extends Authenticatable// Mungkin ada 'implements MustVerifyEmail', b
         $name   = $this->name;
         $length = strlen($name);
 
+        // Jika nama sangat pendek (1-2 karakter), samarkan sepenuhnya.
         if ($length <= 2) {
             return str_repeat('*', $length);
         }
 
+        // Jika nama cukup pendek (3-5 karakter), ambil 1 karakter depan, sisanya samarkan.
+        if ($length > 2 && $length < 6) {
+            $start  = substr($name, 0, 1);
+            $masked = str_repeat('*', $length - 1);
+            return $start . $masked;
+        }
+
+        // Jika nama panjang (6 karakter atau lebih), gunakan logika awal Anda.
+        // Kode ini sekarang hanya akan berjalan jika $length - 6 menghasilkan 0 atau lebih.
         $start  = substr($name, 0, 3);
         $end    = substr($name, -3);
         $masked = str_repeat('*', $length - 6);

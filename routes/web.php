@@ -92,7 +92,7 @@ Route::middleware('auth')->group(function () {
         })->name('laporan.saya');
         Route::get('/laporan/{report}', [ReportController::class, 'show'])->name('laporan.show');
         Route::get('/laporan/{report}/edit', [ReportController::class, 'edit'])->name('laporan.edit');
-        Route::patch('/laporan/{report}', [ReportController::class, 'update']);
+        Route::patch('/laporan/{report}', [ReportController::class, 'update'])->name('laporan.update');
     });
 
     // --- RUTE KHUSUS ADMIN OFFICER ---
