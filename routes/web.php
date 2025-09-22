@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
     // Profil (Edit, Update, Hapus)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/validate-field', [ProfileController::class, 'validateField'])->name('profile.validate');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::delete('/profile/image', [ProfileController::class, 'destroyImage'])->name('profile.image.destroy');
     // Ini adalah rute 'password.update' yang asli untuk pengguna yang sudah login

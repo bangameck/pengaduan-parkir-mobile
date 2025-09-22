@@ -234,7 +234,7 @@
                     getGeolocation() {
                         if (navigator.geolocation) {
                             navigator.geolocation.getCurrentPosition(
-                                // Success Callback
+                                // Success Callback (Tidak berubah)
                                 (position) => {
                                     const lat = position.coords.latitude;
                                     const lon = position.coords.longitude;
@@ -266,28 +266,39 @@
                                             this.locationDescription = 'Gagal memuat nama lokasi.';
                                         });
                                 },
-                                // Error Callback
+                                // Error Callback (DITINGKATKAN)
                                 (error) => {
                                     this.geoStatus = 'Gagal mendapatkan lokasi.';
                                     this.locationDescription =
-                                        'Pastikan Anda menggunakan koneksi HTTPS.';
+                                        'Pastikan GPS aktif dan izin lokasi diberikan.';
+                                    console.error(
+                                        `Geolocation Error Code: ${error.code}, Message: ${error.message}`
+                                    );
 
-                                    // Tampilkan Swal berdasarkan jenis error
+                                    let title = 'Lokasi Gagal Didapat';
+                                    let text =
+                                        'Tidak dapat mengambil lokasi Anda. Pastikan GPS aktif dan koneksi internet stabil.';
+
+                                    // Deteksi jika pengguna menolak izin secara manual
                                     if (error.code === error.PERMISSION_DENIED) {
-                                        Swal.fire({
-                                            icon: 'error',
-                                            title: 'Izin Lokasi Diblokir',
-                                            text: 'Anda telah memblokir izin lokasi untuk situs ini. Mohon aktifkan melalui pengaturan browser Anda untuk melanjutkan.',
-                                            confirmButtonText: 'Saya Mengerti'
-                                        });
-                                    } else {
-                                        Swal.fire({
-                                            icon: 'warning',
-                                            title: 'Lokasi Gagal Didapat',
-                                            text: 'Tidak dapat mengambil lokasi Anda saat ini. Pastikan GPS aktif dan koneksi internet stabil.',
-                                            confirmButtonText: 'Coba Lagi Nanti'
-                                        });
+                                        title = 'Izin Lokasi Diblokir';
+                                        text =
+                                            'Anda telah memblokir izin lokasi. Mohon aktifkan melalui pengaturan browser Anda untuk melanjutkan.';
                                     }
+                                    // Deteksi jika ada masalah overlay atau sinyal GPS lemah
+                                    else if (error.code === error.POSITION_UNAVAILABLE || error.code ===
+                                        error.TIMEOUT) {
+                                        title = 'Gagal Mengakses GPS';
+                                        text =
+                                            'Pastikan GPS Anda aktif. Jika muncul peringatan "overlay" atau "balon", harap tutup aplikasi lain seperti chat Messenger, lalu coba lagi.';
+                                    }
+
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: title,
+                                        text: text,
+                                        confirmButtonText: 'Saya Mengerti'
+                                    });
                                 }
                             );
                         } else {

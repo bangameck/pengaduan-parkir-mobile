@@ -2,13 +2,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage; // Pastikan ini ada
-use Illuminate\View\View;
-use Intervention\Image\Drivers\Gd\Driver; // Pastikan ini ada
+use Illuminate\Validation\Rule;
+use Illuminate\View\View; // Pastikan ini ada
+use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
 // Pastikan ini ada
@@ -107,5 +109,24 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    public function validateField(Request $request): JsonResponse
+    {
+        $request->validate([
+            'field' => ['required', Rule::in(['username', 'phone_number'])],
+            'value' => ['required', 'string'],
+        ]);
+
+        $field  = $request->input('field');
+        $value  = $request->input('value');
+        $userId = Auth::id();
+
+        // Cek apakah ada user LAIN yang sudah menggunakan value ini
+        $exists = \App\Models\User::where($field, $value)
+            ->where('id', '!=', $userId)
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
     }
 }
