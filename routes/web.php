@@ -17,6 +17,7 @@ use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SuperAdmin\SettingController;
 use App\Http\Controllers\SuperAdmin\UserController;
+use App\Http\Controllers\TemporaryFileController;
 use App\Livewire\AdminOfficer\ReportRecap;
 use App\Livewire\Field\PerformanceReport;
 use App\Livewire\Field\TaskList;
@@ -157,6 +158,10 @@ Route::get('stream/{path}', function ($path) {
     // Langsung redirect ke URL file yang sebenarnya di folder public
     return redirect(Storage::url($path));
 })->name('media.stream')->where('path', '.*');
+
+// Routes for FilePond temporary uploads
+Route::post('/upload', [TemporaryFileController::class, 'store'])->name('temp.upload');
+Route::delete('/revert', [TemporaryFileController::class, 'destroy'])->name('temp.revert');
 
 //details laporan public
 // Route::get('/laporan/{report:report_code}', [App\Http\Controllers\PublicReportController::class, 'show'])->name('public.laporan.show');

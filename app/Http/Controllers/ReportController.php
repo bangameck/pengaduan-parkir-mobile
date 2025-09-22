@@ -1,22 +1,22 @@
 <?php
 namespace App\Http\Controllers;
 
-// Model
+// Models and Events
 use App\Events\ReportStatusUpdated;
 use App\Models\Report;
+use App\Models\ReportImage; // Pastikan model ini di-import
 // Laravel Facades & Helpers
-use FFMpeg\Coordinate\TimeCode;
-use FFMpeg\FFMpeg;
-use FFMpeg\Format\Video\X264;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-// Intervention Image & FFMpeg
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+// Intervention Image
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
@@ -33,27 +33,54 @@ class ReportController extends Controller
     /**
      * Menyimpan laporan baru ke database.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse
     {
-        // 1. Validasi Input untuk multi-upload
+
+        // PERBAIKAN: Parse images jika JSON string (dari JS FormData)
+        $images = $request->input('images');
+        if (is_string($images)) {
+            $decodedImages = json_decode($images, true); // Parse ke array
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decodedImages)) {
+                $request->merge(['images' => $decodedImages]); // Ganti request dengan array
+                Log::info('Images parsed from JSON string:', $decodedImages);
+            } else {
+                Log::error('Invalid JSON for images: ' . $images);
+                return response()->json(['error' => 'Format images tidak valid'], 422);
+            }
+        }
+        // PERBAIKAN: Parse video_thumbnails jika ada (array base64)
+        $videoThumbnails = [];
+        foreach ($request->all() as $key => $value) {
+            if (strpos($key, 'video_thumbnails') === 0 && ! empty($value)) {
+                $videoThumbnails[] = $value; // Collect base64 thumbnails
+            }
+        }
+        if (! empty($videoThumbnails)) {
+            $request->merge(['video_thumbnails' => $videoThumbnails]);
+            Log::info('Video thumbnails collected:', count($videoThumbnails));
+        }
+        // PERBAIKAN UTAMA: Validasi diubah untuk menerima array of strings (path)
+        // Validasi
         $validated = $request->validate([
-            'title'            => 'required|string|max:255',
-            'description'      => 'required|string',
-            'location_address' => 'required|string|max:500',
-            'images'           => 'required|array|max:5',                          // 'images' sekarang adalah array
-            'images.*'         => 'file|mimes:jpeg,png,jpg,mp4,mov,avi|max:25600', // Validasi setiap file
+            'title'              => 'required|string|max:255',
+            'description'        => 'required|string',
+            'location_address'   => 'required|string|max:500',
+            'images'             => 'required|array|min:1|max:5',
+            'images.*'           => 'string',
+            'video_thumbnails'   => 'sometimes|array',
+            'video_thumbnails.*' => 'nullable|string',
         ], [
-            'images.required' => 'Anda harus mengunggah minimal satu file (gambar atau video).',
-            'images.array'    => 'Format unggahan tidak valid.',
+            'images.required' => 'Anda harus mengunggah minimal satu file bukti.',
+            'images.min'      => 'Anda harus mengunggah minimal satu file bukti.',
             'images.max'      => 'Anda hanya dapat mengunggah maksimal 5 file.',
-            'images.*.mimes'  => 'Hanya file gambar (jpeg, png, jpg) dan video (mp4, mov, avi) yang diizinkan.',
-            'images.*.max'    => 'Ukuran maksimal setiap file adalah 25MB.',
         ]);
+
+        // Debug data yang diterima (opsional, bisa dihapus setelah testing)
+        Log::info('Received data:', $validated);
 
         try {
             DB::beginTransaction();
 
-            // 2. Buat Laporan Utama Terlebih Dahulu
             $reportCode = 'PKRP-' . date('ymd') . '-' . strtoupper(Str::random(4));
             $report     = Report::create([
                 'report_code'      => $reportCode,
@@ -62,78 +89,70 @@ class ReportController extends Controller
                 'description'      => $validated['description'],
                 'location_address' => $validated['location_address'],
                 'status'           => 'pending',
-                'source'           => 'web',                      // Menandai bahwa laporan ini berasal dari web
-                'source_contact'   => Auth::user()->phone_number, // Ambil no HP user yg login
+                'source'           => 'web',
+                'source_contact'   => Auth::user()->phone_number,
             ]);
 
-            // 3. Proses Setiap File yang Diupload
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    $filename      = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-                    $fileType      = str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video';
-                    $path          = 'reports/' . $fileType . 's';
-                    $thumbnailPath = null; // Inisialisasi thumbnail path
-
-                    if (! Storage::disk('public')->exists($path)) {
-                        Storage::disk('public')->makeDirectory($path);
-                    }
-
-                    if ($fileType === 'image') {
-                        // Proses GAMBAR
-                        $manager = new ImageManager(new Driver());
-                        $image   = $manager->read($file);
-                        $image->scale(width: 800)->toJpeg(75)->save(storage_path('app/public/' . $path . '/' . $filename));
-                    } else {
-                        // Proses VIDEO
-                        try {
-                            $ffmpeg = FFMpeg::create([
-                                'ffmpeg.binaries'  => env('FFMPEG_PATH', 'ffmpeg'),
-                                'ffprobe.binaries' => env('FFPROBE_PATH', 'ffprobe'),
-                            ]); // Konfigurasi FFMpeg-mu
-
-                            // === MEMBUAT THUMBNAIL DARI VIDEO ===
-                            $video         = $ffmpeg->open($file->getPathname());
-                            $thumbnailName = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
-                            $thumbnailDir  = 'reports/thumbnails';
-                            if (! Storage::disk('public')->exists($thumbnailDir)) {
-                                Storage::disk('public')->makeDirectory($thumbnailDir);
-                            }
-                            $video->frame(TimeCode::fromSeconds(1))->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
-                            $thumbnailPath = $thumbnailDir . '/' . $thumbnailName; // Simpan path thumbnail
-                                                                                   // ===================================
-
-                            // Kompres Video
-                            $format = new X264('aac', 'libx264');
-                            $format->setKiloBitrate(500);
-                            $video->save($format, storage_path('app/public/' . $path . '/' . $filename));
-                        } catch (\Exception $e) {
-                            Log::warning('FFMpeg Gagal, menyimpan file video asli: ' . $e->getMessage());
-                            $file->storeAs($path, $filename, 'public');
-                        }
-                    }
-
-                    // Simpan path dan tipe file ke DB
-                    $report->images()->create([
-                        'file_path'      => $path . '/' . $filename,
-                        'file_type'      => $fileType,
-                        'thumbnail_path' => $thumbnailPath, // <-- Simpan path thumbnail
-                    ]);
+            foreach ($validated['images'] as $index => $tempPath) {
+                if (! Storage::disk('public')->exists($tempPath)) {
+                    continue;
                 }
+
+                $fileType     = Str::startsWith(Storage::disk('public')->mimeType($tempPath), 'video') ? 'video' : 'image';
+                $filename     = basename($tempPath);
+                $permanentDir = 'reports/' . $report->id;
+                $newFullPath  = $permanentDir . '/' . $filename;
+
+                Storage::disk('public')->move($tempPath, $newFullPath);
+
+                $thumbnailPath = null;
+                $thumbnailDir  = $permanentDir . '/thumbnails';
+
+                if ($fileType === 'image') {
+                    $manager       = new ImageManager(new Driver());
+                    $thumbnailName = 'thumb_' . Str::random(10) . '.jpg';
+                    Storage::disk('public')->makeDirectory($thumbnailDir);
+                    $image = $manager->read(Storage::disk('public')->path($newFullPath));
+                    $image->cover(300, 200)->toJpeg(80)->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
+                    $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
+                } elseif ($fileType === 'video' && ! empty($validated['video_thumbnails'][$index])) {
+                    $base64_image       = $validated['video_thumbnails'][$index];
+                    @list(, $file_data) = explode(',', $base64_image);
+                    $thumbnailData      = base64_decode($file_data);
+
+                    $thumbnailName = 'thumb_' . Str::random(10) . '.jpg';
+                    Storage::disk('public')->makeDirectory($thumbnailDir);
+                    Storage::disk('public')->put($thumbnailDir . '/' . $thumbnailName, $thumbnailData);
+                    $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
+                }
+
+                $report->images()->create([
+                    'file_path'      => $newFullPath,
+                    'file_type'      => $fileType,
+                    'thumbnail_path' => $thumbnailPath,
+                ]);
+
+                Storage::disk('public')->deleteDirectory(dirname($tempPath));
             }
 
             DB::commit();
-
             event(new ReportStatusUpdated($report->fresh()));
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menyimpan laporan baru: ' . $e->getMessage());
-            return back()->with('error', 'Gagal membuat laporan: ' . $e->getMessage())->withInput();
+            return response()->json(['message' => 'Gagal membuat laporan: ' . $e->getMessage()], 500);
         }
 
-        return redirect()->route('dashboard')->with('success', 'Laporan Anda berhasil dikirim! Kode Laporan: ' . $reportCode);
+        return response()->json([
+            'message'      => 'Laporan Anda berhasil dikirim! Kode Laporan: ' . $reportCode,
+            'redirect_url' => route('dashboard'),
+        ]);
     }
 
+    /**
+     * Menampilkan detail laporan.
+     */
     public function show(Request $request, Report $report): View
     {
         // Otorisasi (tetap sama)
@@ -154,6 +173,9 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Menampilkan form edit laporan.
+     */
     public function edit(Report $report): View
     {
         // OTORISASI: Pastikan hanya pemilik laporan & statusnya 'pending' yang bisa mengedit.
@@ -172,97 +194,70 @@ class ReportController extends Controller
      */
     public function update(Request $request, Report $report): RedirectResponse
     {
-        // OTORISASI: Cek ulang sebelum menyimpan
         if (Auth::id() !== $report->resident_id || $report->status !== 'pending') {
             abort(403, 'LAPORAN INI TIDAK DAPAT DIUBAH LAGI.');
         }
 
         $validated = $request->validate([
-            'title'            => 'required|string|max:255',
-            'description'      => 'required|string',
-            'location_address' => 'required|string|max:500',
-            'images'           => 'nullable|array|max:5', // Gambar baru tidak wajib
-            'images.*'         => 'file|mimes:jpeg,png,jpg,mp4,mov,avi|max:25600',
-            'delete_images'    => 'nullable|array', // Array berisi ID gambar yang akan dihapus
-            'delete_images.*'  => 'integer|exists:report_images,id',
+            'title'              => 'required|string|max:255',
+            'description'        => 'required|string',
+            'location_address'   => 'required|string|max:500',
+            'images'             => 'nullable|array|max:5', // File baru tidak wajib
+            'images.*'           => 'string',               // Kunci: validasi sebagai string
+            'video_thumbnails'   => 'sometimes|array',
+            'video_thumbnails.*' => 'nullable|string',
+            'delete_images'      => 'nullable|array',
+            'delete_images.*'    => 'integer|exists:report_images,id',
         ]);
 
         try {
             DB::beginTransaction();
+            $report->update(Arr::only($validated, ['title', 'description', 'location_address']));
 
-            // 1. Update data teks
-            $report->update([
-                'title'            => $validated['title'],
-                'description'      => $validated['description'],
-                'location_address' => $validated['location_address'],
-            ]);
-
-            // 2. Hapus gambar lama (jika ada)
             if (! empty($validated['delete_images'])) {
-                foreach ($validated['delete_images'] as $imageId) {
-                    $image = $report->images()->find($imageId);
-                    if ($image) {
-                        Storage::disk('public')->delete($image->file_path);
-                        if ($image->thumbnail_path) {
-                            Storage::disk('public')->delete($image->thumbnail_path);
-                        }
-                        $image->delete();
+                $imagesToDelete = $report->images()->whereIn('id', $validated['delete_images'])->get();
+                foreach ($imagesToDelete as $image) {
+                    Storage::disk('public')->delete($image->file_path);
+                    if ($image->thumbnail_path) {
+                        Storage::disk('public')->delete($image->thumbnail_path);
                     }
+                    $image->delete();
                 }
             }
 
-            // 3. Proses Setiap File yang Diupload
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    $filename      = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-                    $fileType      = str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video';
-                    $path          = 'reports/' . $fileType . 's';
-                    $thumbnailPath = null; // Inisialisasi thumbnail path
-
-                    if (! Storage::disk('public')->exists($path)) {
-                        Storage::disk('public')->makeDirectory($path);
+            if (! empty($validated['images'])) {
+                foreach ($validated['images'] as $index => $tempPath) {
+                    if (! Storage::disk('public')->exists($tempPath)) {
+                        continue;
                     }
+
+                    $fileType     = Str::startsWith(Storage::disk('public')->mimeType($tempPath), 'video') ? 'video' : 'image';
+                    $filename     = basename($tempPath);
+                    $permanentDir = 'reports/' . $report->id;
+                    $newFullPath  = $permanentDir . '/' . $filename;
+                    Storage::disk('public')->move($tempPath, $newFullPath);
+
+                    $thumbnailPath = null;
+                    $thumbnailDir  = $permanentDir . '/thumbnails';
 
                     if ($fileType === 'image') {
-                        // Proses GAMBAR
-                        $manager = new ImageManager(new Driver());
-                        $image   = $manager->read($file);
-                        $image->scale(width: 800)->toJpeg(75)->save(storage_path('app/public/' . $path . '/' . $filename));
-                    } else {
-                        // Proses VIDEO
-                        try {
-                            $ffmpeg = FFMpeg::create([
-                                'ffmpeg.binaries'  => env('FFMPEG_PATH', 'ffmpeg'),
-                                'ffprobe.binaries' => env('FFPROBE_PATH', 'ffprobe'),
-                            ]); // Konfigurasi FFMpeg-mu
-
-                            // === MEMBUAT THUMBNAIL DARI VIDEO ===
-                            $video         = $ffmpeg->open($file->getPathname());
-                            $thumbnailName = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
-                            $thumbnailDir  = 'reports/thumbnails';
-                            if (! Storage::disk('public')->exists($thumbnailDir)) {
-                                Storage::disk('public')->makeDirectory($thumbnailDir);
-                            }
-                            $video->frame(TimeCode::fromSeconds(1))->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
-                            $thumbnailPath = $thumbnailDir . '/' . $thumbnailName; // Simpan path thumbnail
-                                                                                   // ===================================
-
-                            // Kompres Video
-                            $format = new X264('aac', 'libx264');
-                            $format->setKiloBitrate(500);
-                            $video->save($format, storage_path('app/public/' . $path . '/' . $filename));
-                        } catch (\Exception $e) {
-                            Log::warning('FFMpeg Gagal, menyimpan file video asli: ' . $e->getMessage());
-                            $file->storeAs($path, $filename, 'public');
-                        }
+                        $manager       = new ImageManager(new Driver());
+                        $thumbnailName = 'thumb_' . Str::random(10) . '.jpg';
+                        Storage::disk('public')->makeDirectory($thumbnailDir);
+                        $image = $manager->read(Storage::disk('public')->path($newFullPath));
+                        $image->cover(300, 200)->toJpeg(80)->save(storage_path('app/public/' . $thumbnailDir . '/' . $thumbnailName));
+                        $thumbnailPath = $thumbnailDir . '/' . $thumbnailName;
+                    } elseif ($fileType === 'video' && ! empty($validated['video_thumbnails'][$index])) {
+                        // ... logika untuk menyimpan thumbnail video ...
                     }
 
-                    // Simpan path dan tipe file ke DB
                     $report->images()->create([
-                        'file_path'      => $path . '/' . $filename,
+                        'file_path'      => $newFullPath,
                         'file_type'      => $fileType,
-                        'thumbnail_path' => $thumbnailPath, // <-- Simpan path thumbnail
+                        'thumbnail_path' => $thumbnailPath,
                     ]);
+
+                    Storage::disk('public')->deleteDirectory(dirname($tempPath));
                 }
             }
 
