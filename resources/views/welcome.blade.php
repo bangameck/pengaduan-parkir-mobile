@@ -180,6 +180,29 @@
             <livewire:public-report-list />
         </div>
     </div>
+
+    <div x-data="pwaInstaller"
+         x-show="showInstallButton"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-8"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-8"
+         class="fixed bottom-24 sm:bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md z-50"
+         style="display: none;">
+
+        <div class="bg-white rounded-xl shadow-2xl p-4 flex items-center gap-4 border">
+            <img src="{{ asset('logo-parkir.png') }}" alt="Logo" class="h-12 w-12 rounded-lg object-cover">
+            <div class="flex-grow">
+                <p class="font-bold text-gray-800">Install Aplikasi SiParkirKita</p>
+                <p class="text-sm text-gray-600">Dapatkan akses lebih cepat dari layar utama Anda.</p>
+            </div>
+            <button @click="installPWA" class="flex-shrink-0 bg-dishub-blue-800 text-white font-semibold text-sm px-4 py-2 rounded-lg hover:bg-dishub-blue-900 transition-colors">
+                Install
+            </button>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -188,6 +211,33 @@
             const loadTime = (performance.now() / 1000).toFixed(2);
             document.getElementById("loadTime").textContent =
                 `⚡ Halaman diload dalam ${loadTime} detik`;
+        });
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('pwaInstaller', () => ({
+                showInstallButton: false,
+                deferredPrompt: null,
+                init() {
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        this.deferredPrompt = e;
+                        this.showInstallButton = true;
+                    });
+                },
+                installPWA() {
+                    if (!this.deferredPrompt) return;
+                    this.showInstallButton = false;
+                    this.deferredPrompt.prompt();
+                    this.deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('Pengguna menginstal aplikasi');
+                        } else {
+                            console.log('Pengguna menolak instalasi');
+                        }
+                        this.deferredPrompt = null;
+                    });
+                }
+            }));
         });
     </script>
 @endpush

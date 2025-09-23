@@ -8,14 +8,13 @@
 
         <title>{{ config('app.name', 'SiParkirKita - Kota Pekanbaru') }}</title>
 
-        <!-- Fonts & Icons -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+            integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+            crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-        <!-- SweetAlert2 -->
         <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <style>
             :root {
@@ -57,29 +56,37 @@
                 flex-direction: column;
                 justify-content: center;
                 position: relative;
-                overflow: hidden;
+                /* overflow: hidden; Dihapus untuk memperbaiki tooltip */
+            }
+
+            .auth-left::before,
+            .auth-left::after {
+                content: '';
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.08);
+                z-index: 1;
+                /* Lapisan Latar */
             }
 
             .auth-left::before {
-                content: '';
-                position: absolute;
                 top: -50px;
                 right: -50px;
                 width: 200px;
                 height: 200px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.1);
             }
 
             .auth-left::after {
-                content: '';
-                position: absolute;
                 bottom: -80px;
                 left: -80px;
                 width: 300px;
                 height: 300px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .auth-left-content {
+                position: relative;
+                z-index: 2;
+                /* Lapisan Konten, di atas dekorasi */
             }
 
             .auth-right {
@@ -106,16 +113,13 @@
                 justify-content: center;
                 margin-right: 1rem;
                 box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                /* Tambahkan padding jika logo terlalu mepet */
                 padding: 5px;
-                /* Sesuaikan nilai ini jika perlu */
             }
 
             .app-logo-icon img {
                 max-width: 100%;
                 max-height: 100%;
                 object-fit: contain;
-                /* Memastikan gambar pas di dalam tanpa terpotong */
             }
 
             .app-logo-text {
@@ -156,150 +160,23 @@
                 margin-bottom: 2rem;
             }
 
-            .input-group {
-                position: relative;
-                margin-bottom: 1.5rem;
-            }
-
-            .input-field {
-                width: 100%;
-                padding: 1rem 1rem;
-                border: 1px solid #d1d5db;
-                border-radius: 0.5rem;
-                font-size: 1rem;
-                transition: all 0.3s;
-            }
-
-            .input-field:focus {
-                outline: none;
-                border-color: var(--primary);
-                box-shadow: 0 0 0 3px rgba(0, 88, 225, 0.1);
-            }
-
-            .input-label {
-                position: absolute;
-                top: 1rem;
-                left: 1rem;
-                color: #6b7280;
-                pointer-events: none;
-                transition: all 0.3s;
-            }
-
-            .input-field:focus~.input-label,
-            .input-field:not(:placeholder-shown)~.input-label {
-                top: -0.5rem;
-                left: 0.75rem;
-                font-size: 0.75rem;
-                background: white;
-                padding: 0 0.5rem;
-                color: var(--primary);
-            }
-
-            .toggle-password {
-                position: absolute;
-                right: 1rem;
-                top: 1rem;
-                color: #6b7280;
-                cursor: pointer;
-            }
-
-            .remember-forgot {
-                display: flex;
-                justify-content: space-between;
+            .social-icon {
+                display: inline-flex;
                 align-items: center;
-                margin: 1.5rem 0;
-            }
-
-            .remember-me {
-                display: flex;
-                align-items: center;
-            }
-
-            .switch {
-                position: relative;
-                display: inline-block;
-                width: 50px;
-                height: 24px;
-                margin-right: 0.5rem;
-            }
-
-            .switch input {
-                opacity: 0;
-                width: 0;
-                height: 0;
-            }
-
-            .slider {
-                position: absolute;
-                cursor: pointer;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: #ccc;
-                transition: .4s;
-                border-radius: 24px;
-            }
-
-            .slider:before {
-                position: absolute;
-                content: "";
-                height: 16px;
-                width: 16px;
-                left: 4px;
-                bottom: 4px;
-                background-color: white;
-                transition: .4s;
-                border-radius: 50%;
-            }
-
-            input:checked+.slider {
-                background-color: var(--primary);
-            }
-
-            input:checked+.slider:before {
-                transform: translateX(26px);
-            }
-
-            .auth-link {
-                color: var(--primary);
-                text-decoration: none;
-                font-weight: 500;
-            }
-
-            .auth-link:hover {
-                text-decoration: underline;
-            }
-
-            .submit-btn {
-                width: 100%;
-                padding: 1rem;
-                background: var(--primary);
-                color: white;
-                border: none;
-                border-radius: 0.5rem;
-                font-size: 1rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: background 0.3s;
-                display: flex;
                 justify-content: center;
-                align-items: center;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: #f3f4f6;
+                color: #4b5563;
+                font-size: 20px;
+                text-decoration: none;
+                transition: all 0.3s ease-in-out;
             }
 
-            .submit-btn:hover {
-                background: var(--primary-dark);
-            }
-
-            .submit-btn:disabled {
-                opacity: 0.7;
-                cursor: not-allowed;
-            }
-
-            .auth-footer {
-                text-align: center;
-                margin-top: 1.5rem;
-                color: #6b7280;
+            .social-icon:hover {
+                color: #ffffff;
+                transform: scale(1.1);
             }
 
             @media (max-width: 768px) {
@@ -310,19 +187,9 @@
                 .auth-left {
                     display: none;
                 }
-            }
 
-            .spinner {
-                animation: spin 1s linear infinite;
-            }
-
-            @keyframes spin {
-                from {
-                    transform: rotate(0deg);
-                }
-
-                to {
-                    transform: rotate(360deg);
+                .auth-right {
+                    padding: 2rem 1.5rem;
                 }
             }
         </style>
@@ -334,60 +201,92 @@
     <body>
         <div class="auth-container">
             <div class="auth-left">
-                <div class="app-logo">
-                    <div class="app-logo-icon">
-                        {{-- Mengganti icon Font Awesome dengan gambar logo --}}
-                        <img src="{{ asset('logo-parkir.png') }}" alt="Logo SiParkirKita">
+                <div class="auth-left-content">
+                    <div class="app-logo">
+                        <div class="app-logo-icon">
+                            <img src="{{ asset('logo-parkir.png') }}" alt="Logo SiParkirKita">
+                        </div>
+                        <div class="app-logo-text">SiParkirKita</div>
                     </div>
-                    <div class="app-logo-text">SiParkirKita</div>
-                </div>
-
-                <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem;">Sistem Pengaduan Parkir Terpadu
-                </h2>
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="fas fa-map-pin"></i>
-                    </div>
-                    <p style="opacity: 0.9;">Kota Pekanbaru</p>
-                </div>
-
-                <div class="feature-list">
+                    <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem;">Layanan Pengaduan Perparkiran
+                    </h2>
                     <div class="feature-item">
                         <div class="feature-icon">
-                            <i class="fas fa-car"></i>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                    clip-rule="evenodd" />
+                            </svg>
                         </div>
-                        <span>Pengaduan parkir lebih mudah & terpusat</span>
+                        <p style="opacity: 0.9;">Kota Pekanbaru</p>
                     </div>
-
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-clock"></i>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <div class="feature-icon"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M15.428 4.25a.75.75 0 01.286.672l-1.5 9.75a.75.75 0 01-1.428-.218L13.5 9.75h-3.379a.75.75 0 01-.564-.22l-1.75-2.5a.75.75 0 01.99-.085l1.83 1.22H13.5a.75.75 0 010 1.5H9.75a.75.75 0 01-.634-.322l-1.32-2.31A.75.75 0 018.25 6h5.828l.214-1.393a.75.75 0 01.786-.607zM6.5 4.75a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5a.75.75 0 01-.75-.75z"
+                                        clip-rule="evenodd" />
+                                </svg></div>
+                            <span>Pengaduan parkir lebih mudah & terpusat</span>
                         </div>
-                        <span>Respon cepat & penanganan real-time</span>
+                        <div class="feature-item">
+                            <div class="feature-icon"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 5.168A.75.75 0 008 5.75v5.306l-1.11-1.332a.75.75 0 00-1.111.922l1.75 2.1a.75.75 0 00.56.273h3.5a.75.75 0 000-1.5H9.555V5.75a.75.75 0 00-.75-.75g"
+                                        clip-rule="evenodd" />
+                                </svg></div>
+                            <span>Respon cepat & penanganan real-time</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M2.5 3A1.5 1.5 0 001 4.5v11A1.5 1.5 0 002.5 17h15a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0017.5 3h-15zM3.5 6a.5.5 0 01.5-.5h12a.5.5 0 010 1h-12a.5.5 0 01-.5-.5zM12 9a1 1 0 11-2 0 1 1 0 012 0zM5 9a1 1 0 11-2 0 1 1 0 012 0zM17 9a1 1 0 11-2 0 1 1 0 012 0zM12 12a1 1 0 11-2 0 1 1 0 012 0zM5 12a1 1 0 11-2 0 1 1 0 012 0zM17 12a1 1 0 11-2 0 1 1 0 012 0z" />
+                                </svg></div>
+                            <span>Transparansi laporan & tindak lanjut</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM4.057 12.164a4.502 4.502 0 00-1.304 1.348l-.29.351A2.5 2.5 0 004.29 17.5h11.42a2.5 2.5 0 001.826-3.637l-.29-.351a4.502 4.502 0 00-1.304-1.348C13.21 11.25 10.1 11 7 11c-3.1 0-6.21.25-8.943 1.164z" />
+                                </svg></div>
+                            <span>Dukungan masyarakat & pemerintah</span>
+                        </div>
                     </div>
-
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-chart-line"></i>
+                    <div class="mt-12 pt-6 border-t border-gray-200/50">
+                        <h3 class="text-center font-semibold text-white-600/80 mb-4">Ikuti Kami</h3>
+                        <div class="flex justify-center gap-4">
+                            <a href="#" target="_blank" data-tippy-content="WhatsApp"
+                                class="social-icon hover:bg-green-500"><i class="fab fa-whatsapp"></i></a>
+                            <a href="#" target="_blank" data-tippy-content="Instagram"
+                                class="social-icon hover:bg-gradient-to-br hover:from-pink-500 hover:via-red-500 hover:to-yellow-500"><i
+                                    class="fab fa-instagram"></i></a>
+                            <a href="#" target="_blank" data-tippy-content="TikTok"
+                                class="social-icon hover:bg-black"><i class="fab fa-tiktok"></i></a>
+                            <a href="#" target="_blank" data-tippy-content="X / Twitter"
+                                class="social-icon hover:bg-black"><i class="fab fa-x-twitter"></i></a>
+                            <a href="#" target="_blank" data-tippy-content="Facebook"
+                                class="social-icon hover:bg-blue-600"><i class="fab fa-facebook-f"></i></a>
                         </div>
-                        <span>Transparansi laporan & tindak lanjut</span>
-                    </div>
-
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <span>Dukungan masyarakat & pemerintah</span>
                     </div>
                 </div>
             </div>
-
             <div class="auth-right">
                 {{ $slot }}
             </div>
         </div>
 
         @livewireScripts
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://unpkg.com/@popperjs/core@2"></script>
+        <script src="https://unpkg.com/tippy.js@6"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                tippy('[data-tippy-content]', {
+                    animation: 'scale-extreme',
+                    theme: 'translucent',
+                });
+            });
+        </script>
     </body>
 
 </html>

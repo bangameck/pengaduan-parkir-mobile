@@ -83,16 +83,24 @@ class RegisteredUserController extends Controller
 
         // Kirim WhatsApp via Fonnte
         try {
-            Http::asForm()->withHeaders(['Authorization' => config('services.fonnte.token')])
+            // ## PERUBAHAN DI SINI: Pesan dibuat lebih profesional ##
+            $appName = config('app.name', 'SiParkirKita');
+            $message = "Yth. {$user->name},\n\n"
+                . "Gunakan kode berikut untuk menyelesaikan proses registrasi di *{$appName}*.\n\n"
+                . "Kode OTP Anda adalah: *{$otpCode}*\n\n"
+                . "⚠️ *PENTING:* Mohon untuk *TIDAK MEMBAGIKAN* kode ini kepada siapa pun, termasuk pihak yang mengaku sebagai tim kami. Kode ini bersifat rahasia.\n\n"
+                . "Kode ini akan kedaluwarsa dalam 5 menit.\n\n"
+                . "Terima kasih.";
+
+            Http::withHeaders(['Authorization' => config('services.fonnte.token')])
                 ->post('https://api.fonnte.com/send', [
                     'target'  => $user->phone_number,
-                    'message' => "Halo {$user->name}, jangan berikan kode ini kepada siapapun! Kode verifikasi Anda adalah: *{$otpCode}*",
+                    'message' => $message,
                 ]);
         } catch (\Exception $e) {
             Log::error('Gagal mengirim OTP via Fonnte: ' . $e->getMessage());
         }
 
-        // Arahkan ke halaman verifikasi OTP
         return redirect()->route('otp.verification', ['user' => $user->username]);
     }
 }

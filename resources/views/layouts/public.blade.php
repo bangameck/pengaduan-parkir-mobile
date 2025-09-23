@@ -5,13 +5,83 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>{{ config('app_name', 'Aplikasi Pengaduan Parkir Pekanbaru') }} - Ruang Kendali</title>
+
+        @if (isset($reportForMeta))
+            {{-- ================================================================== --}}
+            {{-- == META TAG SAAT MEMBUKA HALAMAN DETAIL LAPORAN == --}}
+            {{-- ================================================================== --}}
+            @php
+                $metaTitle = 'Laporan #' . $reportForMeta->report_code . ': ' . Str::limit($reportForMeta->title, 45);
+                $metaDesc = Str::limit($reportForMeta->description, 155);
+                $metaImage = $reportForMeta->images->first()
+                    ? URL::to(
+                        Storage::url(
+                            $reportForMeta->images->first()->thumbnail_path ??
+                                $reportForMeta->images->first()->file_path,
+                        ),
+                    )
+                    : asset('logo-parkir.png');
+            @endphp
+
+            <title>{{ $metaTitle }} - {{ config('app.name') }}</title>
+            <meta name="description" content="{{ $metaDesc }}">
+
+            {{-- Open Graph Tags (Facebook, WhatsApp, dll) --}}
+            <meta property="og:title" content="{{ $metaTitle }}" />
+            <meta property="og:description" content="{{ $metaDesc }}" />
+            <meta property="og:image" content="{{ $metaImage }}" />
+            <meta property="og:url" content="{{ url()->current() }}" />
+            <meta property="og:site_name" content="{{ config('app.name') }}" />
+            <meta property="og:type" content="article" />
+
+            {{-- Twitter Card Tags --}}
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="{{ $metaTitle }}">
+            <meta name="twitter:description" content="{{ $metaDesc }}">
+            <meta name="twitter:image" content="{{ $metaImage }}">
+        @else
+            {{-- ================================================================== --}}
+            {{-- == META TAG DEFAULT UNTUK HOMEPAGE DAN HALAMAN LAINNYA == --}}
+            {{-- ================================================================== --}}
+            @php
+                $defaultTitle = 'SiParkirKita - Layanan Pengaduan Parkir Pekanbaru';
+                $defaultDesc =
+                    'Laporkan pelanggaran parkir liar di Pekanbaru secara cepat dan mudah. Pantau status laporan Anda secara transparan. Wujudkan parkir tertib bersama UPT Perparkiran Pekanbaru.';
+                $defaultImage = asset('logo-parkir.png'); // Pastikan Anda punya gambar ini di public/
+            @endphp
+
+            <title>{{ $defaultTitle }}</title>
+            <meta name="description" content="{{ $defaultDesc }}">
+            <meta name="keywords"
+                content="lapor parkir, parkir liar, pekanbaru, dishub, upt perparkiran, pengaduan online, parkir pekanbaru">
+
+            {{-- Open Graph Tags (Facebook, WhatsApp, dll) --}}
+            <meta property="og:title" content="{{ $defaultTitle }}" />
+            <meta property="og:description" content="{{ $defaultDesc }}" />
+            <meta property="og:image" content="{{ $defaultImage }}" />
+            <meta property="og:url" content="{{ url()->current() }}" />
+            <meta property="og:site_name" content="SiParkirKita" />
+            <meta property="og:type" content="website" />
+
+            {{-- Twitter Card Tags --}}
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="{{ $defaultTitle }}">
+            <meta name="twitter:description" content="{{ $defaultDesc }}">
+            <meta name="twitter:image" content="{{ $defaultImage }}">
+        @endif
+
+        {{-- Sisa <head> tidak berubah --}}
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap"
             rel="stylesheet">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
             integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+            integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+            crossorigin="anonymous" referrerpolicy="no-referrer" />
+
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
         <style>
@@ -57,8 +127,8 @@
                                         stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
-                                                                       c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 00-3 0v.68C7.64 5.36 6 7.92 6 11v3.159
-                                                                       c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                                                                                                       c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 00-3 0v.68C7.64 5.36 6 7.92 6 11v3.159
+                                                                                                                       c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                     </svg>
 
                                     {{-- Badge count --}}

@@ -59,10 +59,18 @@ class OtpVerificationController extends Controller
 
         // Kirim WhatsApp via Fonnte
         try {
-            Http::asForm()->withHeaders(['Authorization' => config('services.fonnte.token')])
+            // ## PERUBAHAN DI SINI: Pesan dibuat lebih profesional ##
+            $appName = config('app.name', 'SiParkirKita');
+            $message = "Yth. {$user->name},\n\n"
+                . "Sesuai permintaan Anda, kami telah mengirimkan kode OTP baru untuk verifikasi akun di *{$appName}*.\n\n"
+                . "Kode OTP baru Anda adalah: *{$otpCode}*\n\n"
+                . "⚠️ Harap gunakan kode terbaru ini dan abaikan kode sebelumnya. *JANGAN BAGIKAN* kode ini kepada siapa pun.\n\n"
+                . "Kode ini akan kedaluwarsa dalam 5 menit.";
+
+            Http::withHeaders(['Authorization' => config('services.fonnte.token')])
                 ->post('https://api.fonnte.com/send', [
                     'target'  => $user->phone_number,
-                    'message' => "Ini adalah kode verifikasi BARU Anda: *{$otpCode}*. Jangan berikan kepada siapapun.",
+                    'message' => $message,
                 ]);
         } catch (\Exception $e) {
             Log::error('Gagal mengirim ulang OTP via Fonnte: ' . $e->getMessage());

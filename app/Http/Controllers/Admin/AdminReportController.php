@@ -347,14 +347,41 @@ class AdminReportController extends Controller
 
         try {
             $reportUrl = route('public.laporan.show', $report);
-            $message   = "✅ Laporan Anda telah kami terima dan input oleh admin.\n\n"
-                . "Kode Laporan: *{$report->report_code}*\n"
-                . "Judul: {$report->title}\n\n"
-                . "Kami Juga Sudah membuat user login anda dengan menambahkan nomor : *{$report->source_contact}*\n"
-                . "Silahkan klik tulisan *lupa password* pada halaman login untuk membuat password baru\n\n"
-                . "Anda dapat memantau status laporan melalui link berikut:\n"
-                . $reportUrl . "\n\n"
-                . "Terima kasih atas partisipasi Anda.";
+
+            // ## PERUBAHAN DI SINI: Pesan dibuat lebih profesional ##
+
+            // Sapaan dan Konfirmasi
+            $greeting     = "Selamat siang, Bapak/Ibu " . $report->resident->name . ".";
+            $confirmation = "Laporan Anda telah kami terima dan berhasil didata oleh admin SiParkirKita.";
+
+            // Detail Laporan
+            $details = "Berikut adalah rincian laporan Anda:\n"
+                . "🔢 *Kode Laporan:* {$report->report_code}\n"
+                . "🏷️ *Judul:* {$report->title}";
+
+            // Informasi Akun (jika user baru dibuat)
+            $accountInfo = "";
+            if ($report->resident->wasRecentlyCreated) {
+                $accountInfo = "Sebagai bagian dari layanan kami, akun otomatis telah dibuat untuk Anda menggunakan nomor *{$report->source_contact}*.\n\n"
+                    . "Untuk mengakses dan memantau semua laporan Anda, silakan atur password baru Anda melalui menu *Lupa Password* di halaman login.";
+            }
+
+            // Call to Action & Link
+            $callToAction = "Anda dapat memantau status perkembangan laporan ini secara real-time melalui tautan aman di bawah ini:";
+            $closing      = "Terima kasih atas partisipasi Anda dalam mewujudkan parkir yang lebih tertib di Pekanbaru.";
+            $footer       = "_Pesan ini dikirimkan secara otomatis oleh sistem SiParkirKita._";
+
+            // Gabungkan semua bagian pesan
+            $message = implode("\n\n", array_filter([
+                $greeting,
+                $confirmation,
+                $details,
+                $accountInfo,
+                $callToAction,
+                $reportUrl, // Link wajib ada di sini
+                $closing,
+                $footer,
+            ]));
 
             Http::withHeaders(['Authorization' => config('fonnte_token')])
                 ->post('https://api.fonnte.com/send', [
@@ -363,7 +390,6 @@ class AdminReportController extends Controller
                 ]);
 
         } catch (\Exception $e) {
-            // Jika gagal kirim WA, jangan hentikan proses. Cukup catat errornya.
             Log::error('Gagal mengirim WhatsApp konfirmasi via Fonnte: ' . $e->getMessage());
         }
     }

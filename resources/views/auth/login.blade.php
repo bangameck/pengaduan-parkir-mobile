@@ -2,6 +2,20 @@
     {{-- Session Status --}}
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    <div class="flex justify-center mb-6">
+        {{-- ## KODE LOGO BARU DENGAN EFEK ORBIT ## --}}
+        <a href="#" class="logo-orbit-container">
+
+            {{-- Elemen ini yang akan menjadi cahaya berputar --}}
+            <div class="logo-orbit-gradient"></div>
+
+            {{-- Kontainer untuk logo Anda --}}
+            <div class="logo-orbit-content">
+                <img src="{{ asset('logo.png') }}" alt="Logo Aplikasi" class="logo-orbit-image">
+            </div>
+        </a>
+    </div>
+
     <div x-data="{ showPassword: false, isSubmitting: false }">
         <h1 class="auth-title text-center">Silahkan Login!</h1>
         <p class="auth-subtitle text-center">Selamat Datang di Aplikasi Pengaduan Parkir.</p>
@@ -99,6 +113,14 @@
                     </svg>
                     <span x-text="isSubmitting ? 'MEMPROSES...' : 'LOG IN'"></span>
                 </button>
+            </div>
+            <div class="text-center mt-4">
+                <p class="text-sm text-gray-600">
+                    Klik disini untuk menuju halaman
+                    <a href="{{ route('home') }}" class="font-medium text-blue-600 hover:underline">
+                        Dashboard
+                    </a>
+                </p>
             </div>
         </form>
     </div>

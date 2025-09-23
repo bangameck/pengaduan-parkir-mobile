@@ -25,23 +25,30 @@ class ForgotPasswordOtpController extends Controller
 
         $user = User::where('phone_number', $request->phone_number)->first();
 
-        // Buat OTP dan token sementara
         $otpCode = rand(100000, 999999);
         $token   = Str::random(60);
 
-        // Simpan OTP & token ke user
         $user->update([
             'otp_code'       => $otpCode,
             'otp_expires_at' => now()->addMinutes(5),
-            'remember_token' => $token, // Kita "pinjam" kolom ini untuk token reset
+            'remember_token' => $token,
         ]);
 
         // Kirim WhatsApp via Fonnte
         try {
-            Http::asForm()->withHeaders(['Authorization' => config('services.fonnte.token')])
+            // ## PERUBAHAN DI SINI: Pesan dibuat lebih profesional ##
+            $appName = config('app.name', 'SiParkirKita');
+            $message = "Yth. {$user->name},\n\n"
+                . "Kami menerima permintaan untuk mengatur ulang password akun Anda di *{$appName}*.\n\n"
+                . "Gunakan kode berikut untuk melanjutkan:\n"
+                . "Kode OTP: *{$otpCode}*\n\n"
+                . "⚠️ Jika Anda tidak merasa meminta pengaturan ulang password, mohon abaikan pesan ini. *JANGAN BAGIKAN* kode ini kepada siapa pun.\n\n"
+                . "Kode ini akan kedaluwarsa dalam 5 menit.";
+
+            Http::withHeaders(['Authorization' => config('services.fonnte.token')])
                 ->post('https://api.fonnte.com/send', [
                     'target'  => $user->phone_number,
-                    'message' => "Kode OTP untuk reset password Anda adalah: *{$otpCode}*. Jangan berikan kepada siapapun.",
+                    'message' => $message,
                 ]);
         } catch (\Exception $e) {
             Log::error('Gagal mengirim OTP Lupa Password: ' . $e->getMessage());
@@ -72,9 +79,8 @@ class ForgotPasswordOtpController extends Controller
             return back()->withErrors(['otp' => 'Kode OTP tidak valid atau sudah kadaluarsa.']);
         }
 
-        $token = $user->remember_token; // Ambil token yang tadi kita simpan
+        $token = $user->remember_token;
 
-        // Hapus OTP setelah berhasil
         $user->update(['otp_code' => null, 'otp_expires_at' => null]);
 
         return redirect()->route('password.reset', ['user' => $user->username, 'token' => $token]);
@@ -89,11 +95,11 @@ class ForgotPasswordOtpController extends Controller
         return view('auth.reset-password', [
             'request' => request(),
             'user'    => $user,
-            'token'   => $token, // Kirim token ke view
+            'token'   => $token,
         ]);
     }
 
-    // MENYIMPAN PASSWORD BARU (VERSI PERBAIKAN TOTAL)
+    // MENYIMPAN PASSWORD BARU
     public function resetPassword(Request $request)
     {
         $request->validate([
@@ -108,12 +114,10 @@ class ForgotPasswordOtpController extends Controller
             return back()->withErrors(['username' => 'Token atau user tidak valid.']);
         }
 
-        // Gunakan cara yang lebih sederhana dan pasti
         $user->password       = Hash::make($request->password);
-        $user->remember_token = Str::random(60); // Ganti token setelah dipakai untuk keamanan
+        $user->remember_token = Str::random(60);
         $user->save();
 
-        // Ganti 'status' menjadi 'success' agar bisa ditangkap oleh Swal2 di halaman login
         return redirect()->route('login')->with('success', 'Password Anda telah berhasil direset! Silakan login dengan password baru Anda.');
     }
 }

@@ -23,3 +23,57 @@
 [data-modal] {
     z-index: 9999 !important;
 }
+
+/* Tambahkan semua kode di bawah ini */
+@layer components {
+    .logo-orbit-container {
+        @apply relative flex h-24 w-24 items-center justify-center rounded-full;
+    }
+    .logo-orbit-gradient {
+        @apply absolute -m-1 h-[calc(100%_+_0.25rem)] w-[calc(100%_+_0.25rem)] rounded-full;
+        background: conic-gradient(
+            from var(--angle),
+            transparent 0%,
+            transparent 70%,
+            theme('colors.dishub-yellow.400'),
+            theme('colors.dishub-blue.700'),
+            transparent 100%
+        );
+        animation: orbit 4s linear infinite;
+        /* Animasi berhenti saat tidak di-hover untuk performa lebih baik */
+        animation-play-state: paused;
+    }
+    .logo-orbit-container:hover .logo-orbit-gradient {
+        /* Animasi berjalan saat di-hover */
+        animation-play-state: running;
+    }
+    .logo-orbit-content {
+        @apply relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm;
+    }
+    .logo-orbit-image {
+        @apply h-auto w-16 transition-transform duration-300;
+    }
+    .logo-orbit-container:hover .logo-orbit-image {
+        @apply scale-105;
+    }
+
+    .social-share-button {
+        @apply w-12 h-12 rounded-full flex items-center justify-center
+               shadow-md border border-white/50
+               transition-all duration-200 ease-in-out
+               transform hover:-translate-y-1 hover:shadow-lg focus:outline-none;
+    }
+}
+
+/* Properti kustom untuk animasi yang mulus */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes orbit {
+  to {
+    --angle: 360deg;
+  }
+}

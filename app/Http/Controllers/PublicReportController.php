@@ -45,6 +45,10 @@ class PublicReportController extends Controller
 
         // 👉 Tidak perlu set report_name manual, karena sudah otomatis lewat accessor
 
-        return view('laporan-publik-show', ['report' => $report]);
+        return view('laporan-publik-show', [
+            'report'        => $report,
+            'reportForMeta' => $report,
+            'title'         => 'Detail Laporan #' . $report->report_code,
+        ]);
     }
 }
